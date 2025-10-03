@@ -121,23 +121,14 @@ async function init() {
       const likes = r._stats?.likes ?? 0;
       const comments = r._stats?.comments ?? 0;
       return `
-  <li>
-    <div class="card">
-      <div class="rank-num">${i + 1}</div>
-      <img src="${thumbUrl}" alt="" />
-      <div style="flex:1; min-width:0;">
-        <div class="title u-break">${title}</div>
-        <div class="meta u-break">${genre} / ${authorName}</div>
-
-        <!-- カード内フッターにカウントを集約 -->
-        <div class="meta" style="margin-top:.4rem; display:flex; gap:10px; flex-wrap:wrap;">
-          <span>表示数: ${views ?? 0}</span>
-          <span>いいね: ${likes ?? 0}</span>
-          <span>コメント: ${comments ?? 0}</span>
+      <li>
+        <div class="flex items-center gap-3">
+          <div class="rank-num">${i+1}</div>
+          <div class="flex-1">
+            ${window.reviewCardWithStats(r, { views, likes, comments })}
+          </div>
         </div>
-      </div>
-    </div>
-  </li>
+      </li>
       `;
     }).join('');
   }
