@@ -1,59 +1,64 @@
-// js/post.js — GENRES自動注入 / レビュアーネーム自動入力 / 入力→確認→投稿 の本流
+// js/post.js — GENRES自動注入 / レビュアーネーム自動入力 / 入力→確認→投稿（確実動作）
 
 document.addEventListener('DOMContentLoaded', () => {
-  main().catch(console.error);
+  main().catch(e => {
+    console.error(e);
+    alert('初期化に失敗しました。コンソールを確認してください。');
+  });
 });
 
 async function main() {
+  // Supabase 初期化確認
+  if (!window.sb) {
+    console.error('[post] Supabase client (window.sb) が未初期化です。common.js と鍵設定を確認してください。');
+    throw new Error('Supabase 未初期化');
+  }
   const sb = window.sb;
 
-  // 1) GENRES を #genre に注入（common.js の populateGenreSelects でも可）
-  try {
-    const sel = document.getElementById('genre');
-    if (sel && window.GENRES) {
-      const keep = sel.querySelector('option[value=""]');
-      sel.innerHTML = '';
-      if (keep) sel.appendChild(keep);
-      window.GENRES.forEach(g => {
-        const o = document.createElement('option');
-        o.value = g; o.textContent = g;
-        sel.appendChild(o);
-      });
-    }
-  } catch (e) { console.warn('genre populate failed', e); }
+  // 1) GENRES を <select data-genres> に反映
+  try { window.populateGenreSelects?.(); } catch {}
 
   // 2) レビュアーネームをページ表示直後に自動入力
   await presetAuthorName(sb);
 
-  // 3) 商品選択モーダル（最小実装）
+  // 3) 商品選択モーダル（簡易）
   setupProductPicker();
 
-  // 4) 入力→確認
+  // 4) 入力 → 確認
   document.getElementById('postForm').addEventListener('submit', (e) => {
     e.preventDefault();
+    const err = validateInputs();
+    if (err) { alert(err); return; }
     showConfirm();
   });
 
+  // 5) 確認 → 編集に戻る
   document.getElementById('backEdit').addEventListener('click', () => {
     document.getElementById('confirmSection').classList.add('hidden');
     document.getElementById('postForm').classList.remove('hidden');
   });
 
-  // 5) 投稿する（実POST）
+  // 6) 投稿実行
   document.getElementById('confirmPost').addEventListener('click', async () => {
     const btn = document.getElementById('confirmPost');
     toggleBtn(btn, true, '投稿中…');
     try {
       const payload = collectPayload();
-      // 文字列サニタイズ（本文）
+
+      // サニタイズ（本文）
       payload.body = DOMPurify.sanitize(payload.body);
 
+      // スキーマに合わせて null を適切に
+      if (!payload.edit_password) delete payload.edit_password;
+
+      // INSERT
       const { data, error } = await sb.from('reviews').insert(payload).select('id').single();
       if (error) throw error;
 
-      toast('投稿しました');
-      setTimeout(() => { location.href = `review.html?id=${data.id}`; }, 800);
+      window.toast?.('投稿しました');
+      setTimeout(() => { location.href = `review.html?id=${data.id}`; }, 700);
     } catch (err) {
+      console.error('[post] insert error:', err);
       alert('投稿に失敗しました: ' + (err?.message || err));
     } finally {
       toggleBtn(btn, false);
@@ -67,20 +72,22 @@ async function presetAuthorName(sb) {
   const input = document.getElementById('author_name');
   if (!input) return;
 
-  const { data: { user } } = await sb.auth.getUser();
-  if (!user) { input.placeholder = 'ログインすると自動入力されます'; return; }
-
-  let name = (user.email || '').split('@')[0];
   try {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) { input.placeholder = 'ログインすると自動入力されます'; return; }
+
+    let name = (user.email || '').split('@')[0];
     const { data: prof } = await sb
       .from('profiles')
       .select('display_name')
       .eq('user_id', user.id)
       .maybeSingle();
     if (prof?.display_name) name = prof.display_name;
-  } catch {}
 
-  input.value = name;
+    input.value = name;
+  } catch (e) {
+    console.warn('presetAuthorName failed:', e);
+  }
 }
 
 function setupProductPicker() {
@@ -94,7 +101,7 @@ function setupProductPicker() {
   closeBtn.addEventListener('click', () => picker.classList.add('hidden'));
   openAmazon.addEventListener('click', () => {
     const q = encodeURIComponent(document.getElementById('amazonQuery').value || '');
-    window.open(`https://www.amazon.co.jp/s?k=${q}`, '_blank');
+    window.open(`https://www.amazon.co.jp/s?k=${q}`, '_blank', 'noopener');
   });
   autoFetch.addEventListener('click', () => {
     const url = document.getElementById('amazonUrl').value.trim();
@@ -103,6 +110,16 @@ function setupProductPicker() {
       picker.classList.add('hidden');
     }
   });
+}
+
+function validateInputs() {
+  const score = Number((document.getElementById('score').value || '').trim());
+  if (!(score >= 0 && score <= 100)) return '得点は 0〜100 の範囲で入力してください。';
+  if (!document.getElementById('product_name').value.trim()) return '商品名は必須です。';
+  if (!document.getElementById('genre').value.trim()) return 'ジャンルを選択してください。';
+  if (!document.getElementById('title').value.trim()) return 'レビュータイトルを入力してください。';
+  if (!document.getElementById('body').value.trim()) return 'レビュー内容を入力してください。';
+  return null;
 }
 
 function showConfirm() {
@@ -117,17 +134,21 @@ function showConfirm() {
   document.getElementById('previewBody').textContent = data.body || '';
   document.getElementById('previewScore').textContent = String(data.score ?? '-');
 
+  // 画面切替
   document.getElementById('postForm').classList.add('hidden');
   document.getElementById('confirmSection').classList.remove('hidden');
 }
 
 function collectPayload() {
-  const payload = {
+  const v = (id) => (document.getElementById(id)?.value ?? '').trim();
+
+  // disabled の値はそのまま .value で参照可
+  return {
     product_name: v('product_name'),
     product_author: v('product_author'),
-    product_link_url: v('product_link_url'),
-    product_image_url: v('product_image_url'),
-    price_text: v('price_text'),
+    product_link_url: v('product_link_url') || null,
+    product_image_url: v('product_image_url') || null,
+    price_text: v('price_text') || null,
     score: Number(v('score') || 0),
     genre: v('genre'),
     author_name: v('author_name').trim() || '匿名',
@@ -135,22 +156,8 @@ function collectPayload() {
     body: v('body'),
     edit_password: v('edit_password') || null
   };
-  return payload;
-
-  function v(id) { return (document.getElementById(id)?.value ?? '').trim(); }
 }
 
-function toast(msg) {
-  const wrap = document.getElementById('toastWrap') || (() => {
-    const w = document.createElement('div'); w.id='toastWrap'; w.className='toast-wrap'; document.body.appendChild(w); return w;
-  })();
-  const el = document.createElement('div');
-  el.className = 'toast';
-  el.textContent = msg;
-  wrap.appendChild(el);
-  requestAnimationFrame(() => el.classList.add('show'));
-  setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 250); }, 2000);
-}
 function toggleBtn(btn, busy, altText){
   if (!btn) return;
   if (busy){ btn.dataset._t = btn.textContent; btn.disabled = true; if(altText) btn.textContent = altText; }
