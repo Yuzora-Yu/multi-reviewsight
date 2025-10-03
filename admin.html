@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>管理者コンソール - だれでもレビュー</title>
+
+  <!-- GitHub Pages サブパス -->
+  <base href="/multi-reviewsight/">
+
+  <!-- 共通ヘッド（コピペ用） -->
+  <link rel="stylesheet" href="css/style.css?v=2025-10-03" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="js/common.js?v=2025-10-03"></script>
+  <script defer src="js/admin.js?v=2025-10-03"></script>
+</head>
+<body class="bg-gray-50 text-gray-900">
+<header class="border-b bg-white">
+  <div class="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
+    <a href="./" class="font-bold text-xl">だれでもレビュー</a>
+    <nav class="flex gap-3">
+      <a href="post.html" class="btn">レビュー投稿</a>
+      <a href="my.html" class="btn-outline">マイページ</a>
+    </nav>
+  </div>
+</header>
+
+<main class="mx-auto max-w-6xl px-4 py-6 space-y-6">
+  <section class="bg-white p-4 rounded shadow space-y-3">
+    <h1 class="sec">管理者コンソール</h1>
+    <p id="me" class="text-sm text-gray-600">状態を確認中…</p>
+
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+      <input id="q" class="inp md:col-span-2" placeholder="商品名・タイトルで検索" />
+      <select id="qGenre" class="inp">
+        <option value="">ジャンル：すべて</option>
+        <option>ゲーム</option><option>漫画</option><option>アニメ</option><option>書籍</option>
+        <option>映画</option><option>ドラマ</option><option>ソフトウェア</option>
+        <option>IT関連</option><option>DIY関連</option><option>音楽</option>
+        <option>ファッション</option><option>その他</option>
+      </select>
+      <button id="btnSearch" class="btn">検索</button>
+    </div>
+
+    <div class="text-sm text-gray-500">最新50件まで表示。削除は**取り消せません**。</div>
+    <div id="list" class="divide-y"></div>
+  </section>
+</main>
+</body>
+</html>
