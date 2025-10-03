@@ -70,7 +70,9 @@ window.reviewCard = (r) => {
   const url = `review.html?id=${r.id}`;
   return `
   <a class="card" href="${url}">
-    <img src="${img}" alt="">
+    <div class="mediaBox">
+      <img src="${img}" alt="" data-fit="auto">
+    </div>
     <div class="flex-1">
       <div class="meta">${r.genre}｜${new Date(r.created_at).toLocaleDateString()}</div>
       <div class="title">${r.title}</div>
@@ -86,7 +88,9 @@ window.reviewCardWithStats = (r, { views = 0, likes = 0, comments = 0 } = {}) =>
   const url = `review.html?id=${r.id}`;
   return `
   <a class="card" href="${url}">
-    <img src="${img}" alt="">
+    <div class="mediaBox">
+      <img src="${img}" alt="" data-fit="auto">
+    </div>
     <div class="flex-1">
       <div class="meta">${r.genre}｜${new Date(r.created_at).toLocaleDateString()}</div>
       <div class="title">${r.title}</div>
@@ -152,3 +156,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.error(e);
   }
 });
+
+// ==== 画像の縦横比で表示方式を自動切り替え ====
+window.fitThumbs = (root = document) => {
+  const imgs = [...root.querySelectorAll('img[data-fit="auto"]')];
+  imgs.forEach(img => {
+    const apply = () => {
+      const w = img.naturalWidth, h = img.naturalHeight;
+      if (!w || !h) return;
+      img.classList.remove('fit-w', 'fit-h');
+      if (w > h) img.classList.add('fit-w');      // 横長→幅優先
+      else if (h > w) img.classList.add('fit-h'); // 縦長→高さ優先
+      // 正方形はデフォルト（cover）のまま
+    };
+    if (img.complete) apply();
+    else img.addEventListener('load', apply, { once: true });
+
+    // 画像エラー時のフォールバック
+    img.addEventListener('error', () => {
+      img.removeAttribute('src');
+      img.src = 'https://placehold.co/128x128?text=No+Image';
+    }, { once: true });
+  });
+};
+
