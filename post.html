@@ -14,10 +14,10 @@
   <script defer src="https://cdn.jsdelivr.net/npm/dompurify@3.1.7/dist/purify.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
-  <link rel="stylesheet" href="css/style.css?v=2025-10-05" />
+  <link rel="stylesheet" href="css/style.css?v=2025-10-06" />
 
-  <script defer src="js/common.js?v=2025-10-05"></script>
-  <script defer src="js/post.js?v=2025-10-05"></script>
+  <script defer src="js/common.js?v=2025-10-06"></script>
+  <script defer src="js/post.js?v=2025-10-06"></script>
 </head>
 
 <body class="bg-gray-50 text-gray-900">
@@ -53,7 +53,7 @@
           </div>
           <div>
             <label class="label">ジャンル</label>
-            <!-- GENRES 自動注入：data-genres を付ける -->
+            <!-- GENRES を common.js から自動注入 -->
             <select id="genre" class="inp" required data-genres>
               <option value="">選択してください</option>
             </select>
@@ -90,7 +90,7 @@
         <div class="bg-white rounded shadow max-w-xl w-full p-4">
           <div class="flex items-center justify-between mb-2">
             <h3 class="sec">Amazonで商品検索 → URLを貼り付け</h3>
-            <button id="closePicker" class="btn-ghost">閉じる</button>
+            <button id="closePicker" class="btn-ghost" type="button">閉じる</button>
           </div>
           <div class="flex gap-2 mb-3">
             <input id="amazonQuery" class="inp flex-1" placeholder="商品名やASINで検索">
