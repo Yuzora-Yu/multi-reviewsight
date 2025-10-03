@@ -1,4 +1,4 @@
-// js/top.js — トップ：新着4件 / 検索 / ランキング（JOINなし）
+// js/top.js — 新着4件 / 検索 / ランキング（reviewsテーブルのみで集計）
 
 document.addEventListener('DOMContentLoaded', () => {
   init().catch(err => {
@@ -12,24 +12,7 @@ async function init() {
   const sb = window.sb;
 
   /* ===== 新着4件 ===== */
-  {
-    const latestEl = document.getElementById('latestList');
-    try {
-      const { data, error } = await sb
-        .from('reviews')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(4);
-      if (error) throw error;
-
-      latestEl.innerHTML = data.map(r => window.reviewCard(r)).join('');
-      // 画像比率クラスを付与
-      window.fitThumbs(latestEl);
-    } catch (e) {
-      console.error(e);
-      latestEl.innerHTML = `<div class="meta">新着の読み込みに失敗しました</div>`;
-    }
-  }
+  await renderLatest4(sb);
 
   /* ===== ランキング ===== */
   const rankList  = document.getElementById('rankList');
@@ -40,52 +23,72 @@ async function init() {
   async function refreshRanking() {
     rankList.innerHTML = `<li class="meta">更新中...</li>`;
 
-    try {
-      // ここはあなたの既存の取得ロジックに合わせてください
-      // サンプル：views/likes/comments を集計済みテーブル or RPCで取得する想定
-      const { data: rows, error } = await sb
-        .from('review_stats_view') // 例: ビュー名の例。あなたの実装に合わせて変更
-        .select('*')
-        .order(rankOrder?.value || 'views', { ascending: false })
-        .limit(20);
-      if (error) throw error;
+    // 期間フィルタを created_at で絞り込む
+    const period = (rankPeriod?.value || '').trim();
+    const genre  = (rankGenre?.value || '').trim();
+    const order  = (rankOrder?.value || 'views').trim(); // views/likes/comments のいずれか
 
-      const items = rows.map((r, i) => {
-        const views = r.views ?? 0;
-        const likes = r.likes ?? 0;
-        const comments = r.comments ?? 0;
-
-        return `
-          <li>
-            <div class="flex items-center gap-3">
-              <div class="rank-num">${i + 1}</div>
-              <div class="flex-1">
-                ${window.reviewCardWithStats
-                  ? window.reviewCardWithStats(r, { views, likes, comments })
-                  : fallbackCard(r, { views, likes, comments })
-                }
-              </div>
-            </div>
-          </li>`;
-      }).join('');
-
-      rankList.innerHTML = items;
-      // 画像比率クラスを付与
-      window.fitThumbs(rankList);
-    } catch (e) {
-      console.error(e);
-      rankList.innerHTML = `<li class="meta">ランキングの読み込みに失敗しました</li>`;
+    // 期間の起点を作る
+    let fromISO = null;
+    if (period === '7d' || period === '30d' || period === '365d') {
+      const now = new Date();
+      const days = period === '7d' ? 7 : period === '30d' ? 30 : 365;
+      const from = new Date(now.getTime() - days*24*60*60*1000);
+      fromISO = from.toISOString();
     }
+
+    // 基本クエリ
+    let q = sb.from('reviews').select('*');
+
+    if (fromISO) q = q.gte('created_at', fromISO);
+    if (genre)   q = q.eq('genre', genre);
+
+    // 並び順（views/likes/comments いずれも reviews テーブルに列がある想定）
+    // なければ 0 として後でソート。まずは created_at 降順で取る
+    let { data: rows, error } = await q.order('created_at', { ascending: false }).limit(100);
+    if (error) {
+      console.error(error);
+      rankList.innerHTML = `<li class="meta">読み込みに失敗しました</li>`;
+      return;
+    }
+
+    // 列が無い環境でも落ちないようにクライアント側で安全ソート
+    const key = (r) => {
+      if (order === 'likes')    return r.likes    ?? 0;
+      if (order === 'comments') return r.comments ?? 0;
+      return r.views ?? 0;
+    };
+    rows.sort((a, b) => (key(b) - key(a)));
+
+    const items = rows.slice(0, 20).map((r, i) => {
+      const views = r.views ?? 0;
+      const likes = r.likes ?? 0;
+      const comments = r.comments ?? 0;
+
+      return `
+        <li>
+          <div class="flex items-center gap-3">
+            <div class="rank-num">${i + 1}</div>
+            <div class="flex-1">
+              ${window.reviewCardWithStats
+                ? window.reviewCardWithStats(r, { views, likes, comments })
+                : fallbackCard(r, { views, likes, comments })
+              }
+            </div>
+          </div>
+        </li>`;
+    }).join('');
+
+    rankList.innerHTML = items;
   }
 
-  // フォールバック：reviewCardWithStats 未定義でも動く簡易カード
   function fallbackCard(r, { views, likes, comments }) {
     const img = r.product_image_url || 'https://placehold.co/128x128?text=No+Image';
     const url = `review.html?id=${r.id}`;
     return `
       <a class="card" href="${url}">
         <div class="mediaBox">
-          <img src="${img}" alt="" data-fit="auto">
+          <img src="${img}" alt="">
         </div>
         <div class="flex-1">
           <div class="meta">${r.genre}｜${new Date(r.created_at).toLocaleDateString()}</div>
@@ -106,4 +109,21 @@ async function init() {
   rankOrder ?.addEventListener('change', refreshRanking);
 
   await refreshRanking();
+}
+
+async function renderLatest4(sb) {
+  const latestEl = document.getElementById('latestList');
+  try {
+    const { data, error } = await sb
+      .from('reviews')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(4);
+    if (error) throw error;
+
+    latestEl.innerHTML = data.map(r => window.reviewCard(r)).join('');
+  } catch (e) {
+    console.error(e);
+    latestEl.innerHTML = `<div class="meta">新着の読み込みに失敗しました</div>`;
+  }
 }
