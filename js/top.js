@@ -1,3 +1,6 @@
+  document.addEventListener('DOMContentLoaded', async () => {
+  const supabase = window.sb;
+    
   // ランキング：views / likes / comments
   const refreshRanking = async () => {
   const period = document.getElementById('rankPeriod').value;
