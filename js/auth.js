@@ -112,22 +112,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     setTimeout(async () => { await maybeShowNameModal(); }, 300);
   }
 
-  // ネーム保存
-  document.getElementById('nameForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const { data: { user } } = await sb.auth.getUser();
-    if (!user) { window.toast('ログインが必要です'); return; }
-    const displayName = document.getElementById('displayName').value.trim();
-    if (!displayName) return;
+// ネーム保存（本登録）
+document.getElementById('nameForm')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) { window.toast('ログインが必要です'); return; }
 
-    const { error } = await sb.from('profiles')
-      .upsert({ user_id: user.id, display_name: displayName }, { onConflict: 'user_id' });
-    if (error) { window.toast('保存に失敗しました'); console.error(error); return; }
+  const displayName = document.getElementById('displayName').value.trim();
+  if (!displayName) { window.toast('名前を入力してください'); return; }
 
-    window.toast('本登録が完了しました！');
-    closeModal('modalName');
-    await refreshState();
-  });
+  // 自分の行だけ upsert（RLSポリシーと onConflict を揃える）
+  const { error } = await sb.from('profiles')
+    .upsert({ user_id: user.id, display_name: displayName }, { onConflict: 'user_id' });
+
+  if (error) { window.toast('保存に失敗しました：' + error.message); console.error(error); return; }
+
+  window.toast('本登録が完了しました！');
+  // 投稿フォームなどで即反映されるように軽く待って更新
+  setTimeout(() => { location.href = 'my.html'; }, 500);
+});
 
   // ====== 4) ログアウト ======
   logoutBtn?.addEventListener('click', async () => {
