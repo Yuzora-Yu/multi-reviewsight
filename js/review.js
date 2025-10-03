@@ -113,25 +113,28 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   await prepareCommentBox();
 
+  // コメント投稿
   commentForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const { data: { user } } = await sb.auth.getUser();
-    if (!user) { window.toast('ログインしてください'); return; }
+  e.preventDefault();
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) { window.toast('ログインしてください'); return; }
 
-    const displayName = await window.getDisplayName();
-    const body = DOMPurify.sanitize(commentBody.value.trim());
-    if (!body) return;
+  // ここが重要：profiles から display_name を取得して使う
+  const displayName = await window.getDisplayName();
 
-    const { error: insErr } = await sb.from('review_comments').insert({
-      review_id: id,
-      user_id: user.id,
-      commenter_name: displayName || null,
-      body
-    });
-    if (insErr) { window.toast('コメント失敗：' + insErr.message); return; }
+  const body = DOMPurify.sanitize(commentBody.value.trim());
+  if (!body) return;
 
-    commentBody.value = '';
-    await loadComments(currentPage); // 再読込
+  const { error: insErr } = await sb.from('review_comments').insert({
+    review_id: id,
+    user_id: user.id,
+    commenter_name: displayName || null, // ← これを保存
+    body
+  });
+  if (insErr) { window.toast('コメント失敗：' + insErr.message); return; }
+
+  commentBody.value = '';
+  await loadComments(currentPage); // 再読込
   });
 
   // ========= 4) コメント履歴（下）20件ページング =========
