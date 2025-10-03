@@ -4,47 +4,33 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>だれでもレビュー｜ログイン / 会員登録</title>
-
-  <!-- GitHub Pages（サブパス運用の想定。必要に応じて調整） -->
   <base href="/multi-reviewsight/">
 
-  <!-- Styles（共通テーマ。モーダル/カード等のCSSを含む） -->
-  <link rel="stylesheet" href="css/style.css?v=2025-10-03" />
-
-  <!-- Tailwind（ユーティリティ用途） -->
+  <link rel="stylesheet" href="css/style.css?v=2025-10-04" />
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Supabase SDK（必須） -->
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <!-- 共通ユーティリティ（ヘッダー制御・モーダル・カード等） -->
-  <script defer src="js/common.js?v=2025-10-03"></script>
-
-  <!-- このページ専用処理 -->
-  <script defer src="js/auth.js?v=2025-10-03"></script>
+  <script defer src="js/common.js?v=2025-10-04"></script>
+  <script defer src="js/auth.js?v=2025-10-04"></script>
 </head>
-<body class="bg-gray-50 text-gray-900">
-  <!-- ===== Header ===== -->
+<body class="bg-gray-50 text-gray-900" data-page="auth">
   <header class="border-b bg-white">
     <div class="mx mx-auto flex items-center justify-between" style="padding: 12px 20px;">
       <a class="brand" href="./">だれでもレビュー</a>
       <nav id="navRight" class="flex items-center gap-2">
         <a id="myLink" class="btn nav-mypage" href="my.html">マイページ</a>
-        <!-- 管理ボタンは common.js が「マイページとログインの間」に挿入 -->
         <a id="loginLink" class="btn-outline" href="auth.html">ログイン / 登録</a>
       </nav>
     </div>
   </header>
 
-  <!-- ===== Main ===== -->
   <main class="mx mx-auto space-y-6" style="max-width: 720px;">
     <section class="block">
       <h1 class="title mb-2">ログイン / 会員登録</h1>
       <p class="meta">メールでのログイン/登録に対応しています。</p>
 
       <div class="mt-4 flex flex-wrap gap-3">
-        <button id="openLogin" class="btn" onclick="window.openModal('#modalLogin')">ログイン</button>
-        <button id="openRegister" class="btn-outline" onclick="window.openModal('#modalRegister')">新規会員登録</button>
+        <button class="btn" onclick="window.openModal('#modalLogin')">ログイン</button>
+        <button class="btn-outline" onclick="window.openModal('#modalRegister')">新規会員登録</button>
         <button id="logoutBtn" class="btn-outline hidden">ログアウト</button>
       </div>
 
@@ -53,18 +39,20 @@
       </div>
     </section>
 
-    <!-- ヘルプ -->
     <section class="block">
       <h2 class="title">メールの流れ（登録）</h2>
       <ol class="list-decimal pl-6 space-y-1 text-sm text-gray-600">
         <li>「新規会員登録」→ メール/パスワード/確認用パスワード を入力して <b>仮登録</b></li>
-        <li>自動送信されたメールのリンクを押す（日本語の案内文）</li>
+        <li>自動送信されたメールのリンクを押す</li>
         <li>このページに戻り、表示されたメールを確認 → <b>レビュアーネーム</b> を入力して <b>本登録</b></li>
       </ol>
     </section>
   </main>
 
-  <!-- ======= Modal: ログイン ======= -->
+  <!-- トースト表示（右下） -->
+  <div id="toastWrap" class="toast-wrap"></div>
+
+  <!-- Modal: ログイン -->
   <div id="modalLogin" class="modal hidden" aria-hidden="true">
     <div class="overlay"></div>
     <div class="panel">
@@ -81,7 +69,7 @@
     </div>
   </div>
 
-  <!-- ======= Modal: 新規会員登録（仮登録） ======= -->
+  <!-- Modal: 新規登録（仮登録） -->
   <div id="modalRegister" class="modal hidden" aria-hidden="true">
     <div class="overlay"></div>
     <div class="panel">
@@ -95,13 +83,11 @@
         <input id="regPass2" class="inp" type="password" placeholder="確認用パスワード" minlength="8" required />
         <button class="btn w-full" type="submit">仮登録メールを送信</button>
       </form>
-      <p class="meta mt-3">
-        ※ 入力したアドレス宛に確認メールが届きます。メールの「本登録」リンクを押してください。
-      </p>
+      <p class="meta mt-3">※ 入力したアドレス宛に確認メールが届きます。</p>
     </div>
   </div>
 
-  <!-- ======= Modal: レビュアーネーム（本登録） ======= -->
+  <!-- Modal: レビュアーネーム（本登録） -->
   <div id="modalName" class="modal hidden" aria-hidden="true">
     <div class="overlay"></div>
     <div class="panel">
