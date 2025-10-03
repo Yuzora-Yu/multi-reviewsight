@@ -22,8 +22,8 @@ window.APP_BASE_ABS = 'https://yuzora-yu.github.io/multi-reviewsight/';
 const SUPABASE_URL = 'https://ovkumzhdxjljukfqchvu.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im92a3VtemhkeGpsanVrZnFjaHZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk0NTMwMjcsImV4cCI6MjA3NTAyOTAyN30.MOzQtbiP9Ac1QA1Tsk9A3bvu5wHUvv3ggUd8l-jSvcw';
 
-// Supabaseクライアント（CDNのsupabase-jsを使用）
-window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// supabase-js のグローバル "supabase" を使ってクライアント生成
+window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // 絶対URLを作る
 window.appUrl = (pathAndQuery) => new URL(pathAndQuery, window.APP_BASE_ABS).toString();
