@@ -1,141 +1,106 @@
-// js/auth.js —— フル置換
+// js/auth.js — トースト表示＆自動遷移つき
 
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
+  init().catch(console.error);
+});
+
+async function init() {
   const sb = window.sb;
-
-  // ====== 小さなモーダルユーティリティ ======
-  const openModal = (id) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.classList.remove('hidden');
-    el.classList.add('flex');
-  };
-  const closeModal = (id) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.classList.add('hidden');
-    el.classList.remove('flex');
-  };
-  document.querySelectorAll('.modal-close').forEach(btn => {
-    btn.addEventListener('click', () => closeModal(btn.dataset.close));
-  });
-  // 背景クリックで閉じる
-  document.querySelectorAll('.modal').forEach(m => {
-    m.addEventListener('click', (e) => { if (e.target === m) m.classList.add('hidden'); });
-  });
-
-  // ====== 初期状態の表示 ======
   const stateEl = document.getElementById('authState');
   const logoutBtn = document.getElementById('logoutBtn');
+
+  // 状態表示
+  await refreshState();
+
+  // ログアウト
+  logoutBtn?.addEventListener('click', async () => {
+    await sb.auth.signOut();
+    toast('ログアウトしました');
+    await refreshState();
+  });
+
+  // ログインフォーム
+  document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('loginEmail').value.trim();
+    const pass  = document.getElementById('loginPass').value;
+    const btn = e.submitter || e.target.querySelector('button[type="submit"]');
+    toggleBtn(btn, true, '処理中…');
+
+    try {
+      const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+      if (error) throw error;
+      close('#modalLogin');
+      toast('ログインしました');
+      setTimeout(() => location.href = 'my.html', 900);
+    } catch (err) {
+      alert('ログインに失敗しました: ' + (err?.message || err));
+    } finally {
+      toggleBtn(btn, false);
+      await refreshState();
+    }
+  });
+
+  // 新規（仮登録）
+  document.getElementById('registerForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('regEmail').value.trim();
+    const p1 = document.getElementById('regPass').value;
+    const p2 = document.getElementById('regPass2').value;
+    if (p1 !== p2) return alert('パスワードが一致しません');
+
+    const btn = e.submitter || e.target.querySelector('button[type="submit"]');
+    toggleBtn(btn, true, '送信中…');
+    try {
+      const { error } = await sb.auth.signUp({
+        email,
+        password: p1,
+        options: { emailRedirectTo: location.href }
+      });
+      if (error) throw error;
+      close('#modalRegister');
+      toast('確認メールを送信しました');
+    } catch (err) {
+      alert('登録に失敗しました: ' + (err?.message || err));
+    } finally {
+      toggleBtn(btn, false);
+      await refreshState();
+    }
+  });
+
+  // セッション変化で状態更新
+  sb.auth.onAuthStateChange((_e, _session) => {
+    refreshState();
+  });
 
   async function refreshState() {
     const { data: { user } } = await sb.auth.getUser();
     if (user) {
-      stateEl.textContent = `ログイン中：${user.email}`;
-      logoutBtn.classList.remove('hidden');
+      stateEl.textContent = user.email + ' としてログイン中';
+      logoutBtn?.classList.remove('hidden');
     } else {
       stateEl.textContent = '未ログイン';
-      logoutBtn.classList.add('hidden');
+      logoutBtn?.classList.add('hidden');
     }
   }
+}
 
-  await refreshState();
-
-  // ====== 1) ログイン ======
-  document.getElementById('openLogin')?.addEventListener('click', () => openModal('modalLogin'));
-
-  document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('loginEmail').value.trim();
-    const password = document.getElementById('loginPass').value;
-    const { error } = await sb.auth.signInWithPassword({ email, password });
-    if (error) { window.toast('ログイン失敗：' + error.message); return; }
-    window.toast('ログインしました');
-    closeModal('modalLogin');
-    await refreshState();
-  });
-
-  // ====== 2) 新規登録（仮登録 → メール） ======
-  document.getElementById('openRegister')?.addEventListener('click', () => openModal('modalRegister'));
-
-  document.getElementById('registerForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('regEmail').value.trim();
-    const pass1 = document.getElementById('regPass').value;
-    const pass2 = document.getElementById('regPass2').value;
-    if (pass1 !== pass2) { window.toast('確認用パスワードが一致しません'); return; }
-
-    // ここが重要：確認リンクの戻り先
-    const redirectTo = new URL('auth.html?confirm=1', window.APP_BASE_ABS).toString();
-
-    const { error } = await sb.auth.signUp({
-      email,
-      password: pass1,
-      options: {
-        emailRedirectTo: redirectTo,
-        // 日本語メールにしたい場合：Auth > Templates 側で本文を日本語化してください
-        data: { locale: 'ja' }
-      }
-    });
-    if (error) { window.toast('登録失敗：' + error.message); return; }
-
-    window.toast('確認メールを送信しました。受信トレイをご確認ください。');
-    closeModal('modalRegister');
-  });
-
-  // ====== 3) 確認リンクからの復帰（本登録：レビュアーネーム） ======
-  // 既にログイン済みで profiles.display_name が未設定なら、ネーム設定モーダルを出す
-  async function maybeShowNameModal() {
-    const { data: { user } } = await sb.auth.getUser();
-    if (!user) return;
-
-    // すでに display_name があればスキップ
-    const { data } = await sb.from('profiles')
-      .select('display_name').eq('user_id', user.id).maybeSingle();
-    if (data?.display_name) return;
-
-    // メール表示
-    const mail = user.email ?? '';
-    document.getElementById('nameEmail').textContent = mail;
-
-    // オープン
-    openModal('modalName');
-  }
-
-  // `?confirm=1` で戻ってきたら（またはリンクで既にサインイン済みなら）名前モーダル
-  const url = new URL(location.href);
-  if (url.searchParams.get('confirm') === '1') {
-    // 少し待ってからユーザー取得（セッション反映のため）
-    setTimeout(async () => { await refreshState(); await maybeShowNameModal(); }, 300);
-  } else {
-    // 直接開いた場合でも、未設定なら促す
-    setTimeout(async () => { await maybeShowNameModal(); }, 300);
-  }
-
-// ネーム保存（本登録）
-document.getElementById('nameForm')?.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const { data: { user } } = await sb.auth.getUser();
-  if (!user) { window.toast('ログインが必要です'); return; }
-
-  const displayName = document.getElementById('displayName').value.trim();
-  if (!displayName) { window.toast('名前を入力してください'); return; }
-
-  // 自分の行だけ upsert（RLSポリシーと onConflict を揃える）
-  const { error } = await sb.from('profiles')
-    .upsert({ user_id: user.id, display_name: displayName }, { onConflict: 'user_id' });
-
-  if (error) { window.toast('保存に失敗しました：' + error.message); console.error(error); return; }
-
-  window.toast('本登録が完了しました！');
-  // 投稿フォームなどで即反映されるように軽く待って更新
-  setTimeout(() => { location.href = 'my.html'; }, 500);
-});
-
-  // ====== 4) ログアウト ======
-  logoutBtn?.addEventListener('click', async () => {
-    await sb.auth.signOut();
-    window.toast('ログアウトしました');
-    await refreshState();
-  });
-});
+// helpers
+function toast(msg) {
+  const wrap = document.getElementById('toastWrap');
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(() => { el.classList.add('show'); }, 10);
+  setTimeout(() => {
+    el.classList.remove('show');
+    setTimeout(() => el.remove(), 250);
+  }, 2000);
+}
+function close(sel){ window.closeModal(sel); }
+function toggleBtn(btn, busy, altText){
+  if (!btn) return;
+  if (busy){ btn.dataset._t = btn.textContent; btn.disabled = true; if(altText) btn.textContent = altText; }
+  else { btn.disabled = false; btn.textContent = btn.dataset._t || btn.textContent; }
+}
