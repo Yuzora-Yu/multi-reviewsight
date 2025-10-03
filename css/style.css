@@ -227,3 +227,8 @@ hr.sep{
 .text-center{ text-align:center }
 .w-44{ width:11rem } .w-36{ width:9rem }
 .rounded{ border-radius: var(--radius) }
+
+/* 背景だけ白に固定（Tailwindの bg-gray-50 等より優先） */
+html, body {
+  background: #ffffff !important;
+}
