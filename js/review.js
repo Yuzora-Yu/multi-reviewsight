@@ -24,7 +24,7 @@ async function init() {
   byId('detailTitle').textContent = r.title;
   byId('detailMeta').textContent =
     `${r.genre} / ${r.author_name || '匿名'} / ${new Date(r.created_at).toLocaleDateString()}`;
-  byId('detailScore').textContent = `スコア: ${r.score}`;
+  byId('detailScore').textContent = String(r.score ?? '-');
   byId('detailThumb').src = r.product_image_url || 'https://placehold.co/256x256?text=No+Image';
   byId('detailBody').textContent = r.body || '';
 
