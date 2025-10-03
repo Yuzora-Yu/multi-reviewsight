@@ -1,4 +1,5 @@
-// js/review.js — 画像中央・表示回数記録・コメント20件ページング・未ログイン時はモーダル誘導・いいね反応
+// js/review.js — 画像中央強制 / 閲覧数記録 / コメント20件昇順＋番号 / 未ログイン時はモーダル誘導
+//                ログイン・新規登録は auth.html と同じ実装（メール＋パスワード）
 
 document.addEventListener('DOMContentLoaded', () => {
   init().catch(e => {
@@ -12,59 +13,53 @@ async function init() {
   const sb = window.sb;
   const reviewId = new URLSearchParams(location.search).get('id');
 
+  // ページ識別（画像センタリングの強制用）
+  document.body.setAttribute('data-page', 'review');
+
   // ===== レビュー本体 =====
   const { data: r, error } = await sb.from('reviews').select('*').eq('id', reviewId).maybeSingle();
   if (error || !r) throw error || new Error('not found');
 
   // 反映
-  document.getElementById('detailTitle').textContent = r.title;
-  document.getElementById('detailMeta').textContent = `${r.genre} / ${r.author_name || '匿名'} / ${new Date(r.created_at).toLocaleDateString()}`;
-  document.getElementById('detailScore').textContent = `スコア: ${r.score}`;
-  document.getElementById('detailThumb').src = r.product_image_url || 'https://placehold.co/256x256?text=No+Image';
-  document.getElementById('detailBody').textContent = r.body || '';
+  byId('detailTitle').textContent = r.title;
+  byId('detailMeta').textContent =
+    `${r.genre} / ${r.author_name || '匿名'} / ${new Date(r.created_at).toLocaleDateString()}`;
+  byId('detailScore').textContent = `スコア: ${r.score}`;
+  byId('detailThumb').src = r.product_image_url || 'https://placehold.co/256x256?text=No+Image';
+  byId('detailBody').textContent = r.body || '';
 
-  // ===== 表示回数カウント =====
-  recordView(sb, reviewId).catch(console.warn);
+  // ===== 表示回数（失敗しても落ちない） =====
+  recordView(sb, reviewId);
 
   // ===== コメント（20件ずつ・昇順番号） =====
   const cm = setupComments(sb, reviewId);
 
   // ===== いいね =====
-  const likeBtn = document.getElementById('likeBtn');
+  const likeBtn = byId('likeBtn');
   likeBtn?.addEventListener('click', async () => {
-    const { data: { user } } = await sb.auth.getUser();
-    if (!user) {
-      showInlineNotice('ログインが必要です。ログインすると「いいね」やコメント投稿ができます。');
-      openAuthModal(); // ログインモーダル
-      return;
-    }
+    const user = await getUser(sb);
+    if (!user) return needLogin('「いいね」するにはログインが必要です。');
+
     try {
       await sb.from('review_likes').insert({ review_id: reviewId, user_id: user.id });
       toast('いいねしました');
-      // 見た目の反応
       likeBtn.disabled = true;
       likeBtn.textContent = 'いいね済み';
-      // コメント欄の番号は変わらないが、必要ならランキング更新等に使う
     } catch (e) {
-      // ユニーク制約で既に押しているなど
       toast('すでに「いいね」済みの可能性があります');
+      console.warn(e?.message || e);
     }
   });
 
   // ===== コメント投稿 =====
-  document.getElementById('commentForm')?.addEventListener('submit', async (e) => {
+  byId('commentForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const body = document.getElementById('commentBody').value.trim();
-    if (!body) return;
+    const text = byId('commentBody').value.trim();
+    if (!text) return;
 
-    const { data: { user } } = await sb.auth.getUser();
-    if (!user) {
-      showInlineNotice('ログインが必要です。ログインするとコメントを投稿できます。');
-      openAuthModal();
-      return;
-    }
+    const user = await getUser(sb);
+    if (!user) return needLogin('コメントを投稿するにはログインが必要です。');
 
-    // 表示名
     let commenter_name = (user.email || '').split('@')[0];
     try {
       const { data: prof } = await sb.from('profiles').select('display_name').eq('user_id', user.id).maybeSingle();
@@ -75,12 +70,12 @@ async function init() {
     toggleBtn(btn, true, '投稿中…');
     try {
       const { error: insErr } = await sb.from('review_comments').insert({
-        review_id: reviewId, user_id: user.id, commenter_name, body
+        review_id: reviewId, user_id: user.id, commenter_name, body: text
       });
       if (insErr) throw insErr;
-      document.getElementById('commentBody').value = '';
+      byId('commentBody').value = '';
       toast('コメントを投稿しました');
-      await cm.reloadFromTop(); // 先頭から読み直し＆番号振り直し
+      await cm.reloadFromTop();
     } catch (err) {
       alert('コメント投稿に失敗しました: ' + (err?.message || err));
     } finally {
@@ -88,63 +83,100 @@ async function init() {
     }
   });
 
-  // ===== review ページの画像センター（保険） =====
-  document.body.setAttribute('data-page', 'review');
+  // ===== ログインモーダル：auth.html と同じ動作 =====
+  byId('loginFormReview')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = byId('loginEmailReview').value.trim();
+    const pass  = byId('loginPassReview').value;
+    const btn = e.submitter || e.target.querySelector('button[type="submit"]');
+    toggleBtn(btn, true, '処理中…');
+    try {
+      const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+      if (error) throw error;
+      if (!data?.session || !data?.user) throw new Error('セッション確立に失敗');
+      window.closeModal('#modalLogin');
+      toast('ログインしました');
+    } catch (err) {
+      alert('ログインに失敗しました: ' + (err?.message || err));
+    } finally {
+      toggleBtn(btn, false);
+    }
+  });
 
-  // ===== モーダル：ログイン⇔新規登録の遷移ボタン（レビュー用モーダルの場合） =====
-  document.getElementById('btnGoRegister')?.addEventListener('click', () => {
-    window.closeModal('#modalAuth');
+  // ログイン→新規登録へ
+  byId('goRegisterFromLogin')?.addEventListener('click', () => {
+    window.closeModal('#modalLogin');
     window.openModal('#modalRegister');
+  });
+
+  // 新規登録（仮登録）
+  byId('registerFormReview')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = byId('regEmailReview').value.trim();
+    const p1 = byId('regPassReview').value;
+    const p2 = byId('regPass2Review').value;
+    if (p1 !== p2) return alert('パスワードが一致しません');
+
+    const btn = e.submitter || e.target.querySelector('button[type="submit"]');
+    toggleBtn(btn, true, '送信中…');
+    try {
+      const { error } = await sb.auth.signUp({ email, password: p1, options: { emailRedirectTo: location.href } });
+      if (error) throw error;
+      window.closeModal('#modalRegister');
+      toast('確認メールを送信しました');
+    } catch (err) {
+      alert('登録に失敗しました: ' + (err?.message || err));
+    } finally {
+      toggleBtn(btn, false);
+    }
   });
 }
 
+/* ===== コメント（20件ずつ・昇順番号） ===== */
 function setupComments(sb, reviewId) {
   const PAGE = 20;
   let page = 0; // 0-based
-  const listEl = document.getElementById('commentList');
-  const moreBtn = document.getElementById('commentMore') || createMoreButton();
+  const listEl = byId('commentList');
+  const moreBtn = byId('commentMore') || createMoreButton();
 
   moreBtn.addEventListener('click', async () => {
     page++;
-    await fetchAndRenderPage(page, false);
+    await fetchAndRenderPage(page);
   });
 
-  // 初回：ページ0を描画（昇順＝古い→新しい、掲示板のように1,2,3…）
   reloadFromTop();
 
   async function reloadFromTop() {
     page = 0;
     listEl.innerHTML = '';
     moreBtn.classList.add('hidden');
-    await fetchAndRenderPage(0, true);
+    await fetchAndRenderPage(0);
   }
 
-  async function fetchAndRenderPage(p, renumber) {
+  async function fetchAndRenderPage(p) {
     const from = p * PAGE;
     const to   = from + PAGE - 1;
 
-    const { data, error } = await sb
-      .from('review_comments')
-      .select('id, body, commenter_name, created_at')
-      .eq('review_id', reviewId)
-      .order('created_at', { ascending: true }) // ← 昇順
-      .range(from, to);
+    try {
+      const { data, error } = await sb
+        .from('review_comments')
+        .select('id, body, commenter_name, created_at')
+        .eq('review_id', reviewId)
+        .order('created_at', { ascending: true }) // 昇順（掲示板スタイル）
+        .range(from, to);
+      if (error) throw error;
 
-    if (error) {
-      console.error('review_comments fetch failed', error);
+      const startIndex = from + 1;
+      const items = (data || []).map((c, i) => commentItem(startIndex + i, c)).join('');
+      listEl.insertAdjacentHTML('beforeend', items);
+
+      if ((data || []).length === PAGE) moreBtn.classList.remove('hidden');
+      else moreBtn.classList.add('hidden');
+    } catch (e) {
+      console.error('review_comments fetch failed', e);
       if (!listEl.innerHTML) listEl.innerHTML = `<li class="meta">コメントの取得に失敗しました</li>`;
       moreBtn.classList.add('hidden');
-      return;
     }
-
-    const startIndex = from + 1; // 表示番号の起点
-    const items = (data || []).map((c, i) => commentItem(startIndex + i, c)).join('');
-    listEl.insertAdjacentHTML('beforeend', items);
-
-    if ((data || []).length === PAGE) moreBtn.classList.remove('hidden');
-    else moreBtn.classList.add('hidden');
-
-    if (renumber) { /* 今回は startIndex で連番になっているので追加処理不要 */ }
   }
 
   function commentItem(n, c) {
@@ -173,24 +205,27 @@ function setupComments(sb, reviewId) {
   return { reloadFromTop };
 }
 
+/* ===== 表示回数 ===== */
 async function recordView(sb, reviewId) {
   try {
     const { data: { user } } = await sb.auth.getUser();
+    // 必須列が review_id と user_id のみ、created_at はデフォルトという前提
     await sb.from('review_views').insert({
       review_id: reviewId,
       user_id: user?.id ?? null
     });
   } catch (e) {
-    console.warn('recordView failed', e?.message || e);
+    // RLSやスキーマ差異で失敗してもアプリは落とさない
+    console.warn('recordView failed:', e?.message || e);
   }
 }
 
-// ===== 共通 helpers =====
-function openAuthModal(){ 
-  // レビュー画面用の簡易モーダル（ログイン/新規登録の2ボタンを併設している想定）
-  const modal = document.querySelector('#modalAuth') || document.querySelector('#modalLogin') || document.querySelector('#modalRegister');
-  if (modal?.id === 'modalRegister') window.openModal('#modalRegister');
-  else window.openModal('#modalAuth'); // まずは auth を開く。無ければ login/register にフォールバック
+/* ===== 共通小物 ===== */
+function byId(id){ return document.getElementById(id); }
+async function getUser(sb){ const { data: { user } } = await sb.auth.getUser(); return user; }
+function needLogin(msg){
+  showInlineNotice(msg);
+  window.openModal('#modalLogin');
 }
 function showInlineNotice(msg){
   let el = document.getElementById('authNotice');
@@ -198,7 +233,7 @@ function showInlineNotice(msg){
     el = document.createElement('div');
     el.id = 'authNotice';
     el.className = 'review-box';
-    const host = document.querySelector('main .block'); // 1つ目のブロック下に
+    const host = document.querySelector('main .block');
     host?.parentNode?.insertBefore(el, host.nextSibling);
   }
   el.textContent = msg;
