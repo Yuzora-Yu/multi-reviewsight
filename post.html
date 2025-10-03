@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>レビュー投稿</title>
+
+  <base href="/multi-reviewsight/">
+
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/dompurify@3.1.7/dist/purify.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="js/common.js"></script>
+  <script defer src="js/post.js"></script>
+</head>
+<body class="bg-gray-50 text-gray-900">
+  <header class="border-b bg-white">
+    <div class="mx-auto max-w-3xl px-4 py-4 flex items-center justify-between">
+      <a href="./" class="font-bold text-xl">みんなのレビュー</a>
+      <a href="my.html" class="btn-outline">マイページ</a>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-3xl px-4 py-6 space-y-6">
+    <section class="bg-white p-4 rounded shadow">
+      <h2 class="sec">レビュー投稿</h2>
+      <!-- Amazon検索は後日差し替え。今は手動入力 -->
+      <form id="postForm" class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <input class="inp" id="product_name" placeholder="商品名（必須）" required>
+          <input class="inp" id="product_author" placeholder="作者・メーカー（任意）">
+          <input class="inp md:col-span-2" id="product_link_url" placeholder="商品ページURL（任意／Amazon可）">
+          <input class="inp md:col-span-2" id="product_image_url" placeholder="商品画像URL（任意）">
+          <input class="inp" id="price_text" placeholder="価格（任意、例：¥1,980）">
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="label">得点（0〜100）</label>
+            <input type="number" min="0" max="100" id="score" class="inp" required>
+          </div>
+          <div>
+            <label class="label">ジャンル</label>
+            <select id="genre" class="inp" required>
+              <option>ゲーム</option><option>漫画</option><option>アニメ</option><option>書籍</option>
+              <option>映画</option><option>ドラマ</option><option>IT</option><option>DIY</option>
+              <option>ファッション</option><option>その他</option>
+            </select>
+          </div>
+          <div>
+            <label class="label">レビュー者名（任意）</label>
+            <input id="author_name" class="inp" placeholder="未入力＝匿名">
+          </div>
+        </div>
+
+        <div>
+          <label class="label">レビュータイトル（最大20文字）</label>
+          <input id="title" maxlength="20" class="inp" required>
+        </div>
+
+        <div>
+          <label class="label">レビュー内容（最大2000文字／改行可）</label>
+          <textarea id="body" maxlength="2000" class="inp h-40" required></textarea>
+        </div>
+
+        <div>
+          <label class="label">編集・削除用パスワード（任意）</label>
+          <input id="edit_password" class="inp" type="password" placeholder="設定すると未ログインでも編集・削除可能">
+        </div>
+
+        <div class="flex gap-3">
+          <button class="btn" type="submit">投稿へ進む</button>
+          <a href="./" class="btn-outline">トップへ戻る</a>
+        </div>
+      </form>
+    </section>
+
+    <section id="confirmSection" class="hidden bg-white p-4 rounded shadow">
+      <h2 class="sec">最終確認</h2>
+      <div id="previewCard" class="border rounded p-4 flex gap-4">
+        <img id="previewImg" class="w-24 h-24 object-cover rounded bg-gray-100" />
+        <div class="flex-1">
+          <div class="text-sm text-gray-500" id="previewGenre"></div>
+          <h3 id="previewTitle" class="text-lg font-bold"></h3>
+          <div id="previewMeta" class="text-sm text-gray-600"></div>
+          <p id="previewBody" class="mt-2 text-sm whitespace-pre-wrap"></p>
+        </div>
+        <div class="text-2xl font-bold" id="previewScore"></div>
+      </div>
+      <div class="flex gap-3 mt-4">
+        <button id="confirmPost" class="btn">投稿する</button>
+        <button id="backEdit" class="btn-outline">修正する</button>
+        <button id="saveImage" class="btn-outline">レビュー画像を保存する</button>
+        <button id="shareX" class="btn-outline">Xへ投稿する</button>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
