@@ -5,100 +5,97 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>だれでもレビュー｜トップ</title>
 
+  <!-- GitHub Pages等での相対パス基準。必要に応じて調整 -->
   <base href="/multi-reviewsight/">
 
-  <!-- Tailwind（ユーティリティ用途。自作CSSが最後に全体テーマを上書き） -->
+  <!-- Tailwind（ユーティリティ用途。自作CSSが最後に上書き） -->
   <script src="https://cdn.tailwindcss.com"></script>
 
   <!-- Supabase SDK -->
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <!-- テーマCSS（必ず最後に読み込む / キャッシュバスター付き） -->
+  <!-- テーマCSS（必ず最後に読み込む） -->
   <link rel="stylesheet" href="css/style.css?v=2025-10-03" />
 
-  <!-- 共通JS → ページ専用JS（defer 順序で実行） -->
+  <!-- 共通JS（ヘッダー初期化、reviewCard、fitThumbs、ジャンル自動投入） -->
   <script defer src="js/common.js?v=2025-10-03"></script>
+
+  <!-- このページ専用JS（新着/検索/ランキング） -->
   <script defer src="js/top.js?v=2025-10-03"></script>
 </head>
 
 <body class="bg-gray-50 text-gray-900">
+  <!-- ===== Header ===== -->
   <header class="border-b bg-white">
-    <div class="mx-auto max-w-5xl px-4 py-4 flex items-center justify-between">
-      <a href="./" class="font-bold text-xl">だれでもレビュー</a>
-      <nav class="flex gap-4">
-        <a href="post.html" class="btn">レビュー投稿</a>
-        <a href="my.html" class="btn-outline">マイページ</a>
-        <a id="loginLink" href="auth.html" class="text-sm underline">ログイン</a>
+    <div class="mx mx-auto flex items-center justify-between" style="padding: 12px 20px;">
+      <a class="brand" href="index.html">だれでもレビュー</a>
+      <nav id="navRight" class="flex items-center gap-2">
+        <!-- マイページ（2行・縦中央はCSSで対応） -->
+        <a id="myLink" class="btn nav-mypage" href="my.html">マイページ</a>
+        <!-- 管理ボタンは common.js で「マイページとログインの間」に動的挿入 -->
+        <!-- ログイン/ログアウト切替は common.js 側で制御 -->
+        <a id="loginLink" class="btn-outline" href="auth.html">ログイン / 登録</a>
       </nav>
     </div>
   </header>
 
+  <!-- ===== Main ===== -->
   <main class="mx-auto max-w-5xl px-4 py-6 space-y-10">
     <!-- 検索 -->
-    <section class="bg-white p-4 rounded shadow">
-      <h2 class="sec">レビュー検索</h2>
+    <section class="block">
+      <h2 class="sec title">レビュー検索</h2>
       <form id="searchForm" class="grid grid-cols-1 md:grid-cols-4 gap-3">
         <input id="qProduct" class="inp" placeholder="商品名を検索" />
         <input id="qAuthor" class="inp" placeholder="レビュー者名を検索" />
+        <!-- ジャンルは common.js の populateGenreSelects() が自動投入 -->
         <select id="qGenre" class="inp">
           <option value="">ジャンル：すべて</option>
-          <option>ゲーム</option><option>漫画</option><option>アニメ</option><option>書籍</option>
-          <option>映画</option><option>ドラマ</option><option>IT</option><option>DIY</option>
-          <option>ファッション</option><option>その他</option>
         </select>
         <div class="flex items-center gap-2">
-          <label class="text-sm">点数下限</label>
+          <label for="qMinScore" class="text-sm">点数下限</label>
           <input id="qMinScore" type="number" min="0" max="100" value="0" class="inp w-24" />
-          <button class="btn ml-auto">検索</button>
+          <button type="submit" class="btn ml-auto">検索</button>
         </div>
       </form>
       <div id="searchResults" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4"></div>
     </section>
 
-    <!-- 新着5件 -->
-    <section class="bg-white p-4 rounded shadow">
-      <h2 class="sec">新着レビュー</h2>
+    <!-- 新着レビュー（直近4件） -->
+    <section class="block">
+      <h2 class="sec title">新着レビュー</h2>
       <div id="latestList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
     </section>
 
     <!-- ランキング -->
-    <section class="bg-white p-4 rounded shadow">
-      <div class="flex items-center justify-between">
-        <h2 class="sec">レビュー評価ランキング</h2>
-        <div class="flex gap-2">
-          <select id="rankPeriod" class="inp">
-            <option value="all">通算</option>
-            <option value="month">月</option>
-            <option value="week">週</option>
-            <option value="day">日</option>
-          </select>
-          <select id="rankGenre" class="inp">
-            <option value="">ジャンル：すべて</option>
-            <option>ゲーム</option><option>漫画</option><option>アニメ</option><option>書籍</option>
-            <option>映画</option><option>ドラマ</option><option>IT</option><option>DIY</option>
-            <option>ファッション</option><option>その他</option>
-          </select>
-          <select id="rankOrder" class="inp">
-            <option value="views">表示数順</option>
-            <option value="likes">いいね数順</option>
-            <option value="comments">コメント数順</option>
-          </select>
-        </div>
+    <section class="block">
+      <h2 class="sec title">レビュー評価ランキング</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <!-- 期間（実装は環境に応じて top.js 側で） -->
+        <select id="rankPeriod" class="inp">
+          <option value="">期間：すべて</option>
+          <option value="7d">直近7日</option>
+          <option value="30d">直近30日</option>
+          <option value="365d">直近1年</option>
+        </select>
+
+        <!-- ジャンル（自動投入） -->
+        <select id="rankGenre" class="inp">
+          <option value="">すべて</option>
+        </select>
+
+        <!-- 並び順 -->
+        <select id="rankOrder" class="inp">
+          <option value="views">表示数順</option>
+          <option value="likes">いいね数順</option>
+          <option value="comments">コメント数順</option>
+        </select>
       </div>
+
       <ol id="rankList" class="mt-4 space-y-3"></ol>
     </section>
   </main>
 
+  <!-- ===== Footer ===== -->
   <footer class="py-10 text-center text-sm text-gray-500">© 2025 だれでもレビュー</footer>
-  <footer class="bg-white border-t">
-  <div class="mx-auto max-w-5xl px-4 py-8 text-sm text-gray-600 space-y-2">
-    <h2 class="sec">免責事項</h2>
-    <p>本サイト「だれでもレビュー」は、ユーザーが投稿したコンテンツ（本文・画像・外部リンク等）をそのまま表示するサービスです。運営者は投稿内容の正確性・合法性・有用性を保証しません。各投稿の責任は当該投稿者に帰属します。</p>
-    <p>著作権・商標権・名誉毀損・プライバシー権その他権利侵害の恐れがある内容、公序良俗に反する内容、法令や各プラットフォーム規約に違反する内容は投稿しないでください。問題のある投稿を発見した場合は、権利者または代理人からの申告に基づき、運営者の判断で予告なく非公開・削除等の対応を行うことがあります。</p>
-    <p>外部サイト（Amazon 等）へのリンク先の内容・価格・在庫等はリンク先の責任において提供されるものであり、本サイトは一切の責任を負いません。</p>
-    <p>お問い合わせ・削除依頼は、権利者であることを確認できる情報を添えてご連絡ください。</p>
-  </div>
-</footer>
-
 </body>
 </html>
