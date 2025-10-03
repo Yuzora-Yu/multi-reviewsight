@@ -305,3 +305,34 @@ document.addEventListener('click', (e) => {
   const sel = target.getAttribute('data-close');
   window.closeModal(sel);
 });
+
+    /* ===== Modal (中央固定・オーバーレイ) ===== */
+.modal {
+  position: fixed; inset: 0; z-index: 1000;
+  display: none; /* .is-open で表示 */
+}
+.modal.is-open { display: grid; place-items: center; }
+.modal .overlay { position: absolute; inset: 0; background: rgba(15,23,42,.5); }
+.modal .panel {
+  position: relative; z-index: 1;
+  background: #fff; border-radius: 16px;
+  width: min(640px, 92vw); padding: 20px; box-shadow: var(--shadow-1);
+}
+
+/* data-close ボタンの見た目は既存の .btn/.btn-ghost を流用 */
+
+/* ===== 画像センター（全カード共通の保険）===== */
+.card img {
+  width: 76px; height: 76px;
+  object-fit: contain; object-position: center; display: block;
+  border-radius: 12px; background: #eef2f7; /* 透過PNGの下地 */
+}
+/* mediaBox を使う実装（より厳密な正方形ボックス） */
+.mediaBox{
+  width: 76px; height: 76px; border-radius: 12px; overflow: hidden;
+  background: #eef2f7; display: grid; place-items: center; flex: 0 0 auto;
+}
+.mediaBox img{ max-width:100%; max-height:100%; object-fit:contain; object-position:center; display:block; }
+.mediaBox.lg { width: 128px; height: 128px; border-radius: 14px; }
+@media (min-width: 640px){ .mediaBox.lg { width: 180px; height: 180px; } }
+
