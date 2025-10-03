@@ -15,8 +15,8 @@ window.GENRES = [
 
     // TODO: REPLACE THESE with your real values from your previous working code.
     // Example (from your project): https://ovkumzhdxjljukfqchvu.supabase.co and its anon key
-    const SUPABASE_URL = window.SUPABASE_URL || "https://YOUR-PROJECT.supabase.co";
-    const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || "YOUR-ANON-KEY";
+    const SUPABASE_URL = window.SUPABASE_URL || "https://ovkumzhdxjljukfqchvu.supabase.co";
+    const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im92a3VtemhkeGpsanVrZnFjaHZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk0NTMwMjcsImV4cCI6MjA3NTAyOTAyN30.MOzQtbiP9Ac1QA1Tsk9A3bvu5wHUvv3ggUd8l-jSvcw";
 
     if (!window.supabase) {
       console.error("[common.js] Supabase SDK is missing. Include it in <head>:");
