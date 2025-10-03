@@ -1,6 +1,53 @@
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('postForm');
   const confirmSection = document.getElementById('confirmSection');
+  
+  // --- 商品選択モーダル ---
+  const picker = document.getElementById('productPicker');
+  document.getElementById('openProductPicker').addEventListener('click', () => {
+    picker.classList.remove('hidden');
+    picker.classList.add('flex');
+  });
+  document.getElementById('closePicker').addEventListener('click', () => {
+    picker.classList.add('hidden');
+    picker.classList.remove('flex');
+  });
+
+  // Amazon検索（新しいタブ）
+  document.getElementById('openAmazon').addEventListener('click', () => {
+  const q = encodeURIComponent(document.getElementById('amazonQuery').value.trim() || '');
+  const url = `https://www.amazon.co.jp/s?k=${q}`;
+  window.open(url, '_blank');
+  });
+
+  // URL自動取得（Edge Function: meta-from-url）
+  document.getElementById('autoFetch').addEventListener('click', async () => {
+  const url = document.getElementById('amazonUrl').value.trim();
+  if (!url) return alert('URLを入力してください');
+  try {
+    const resp = await fetch('https://ovkumzhdxjljukfqchvu.supabase.co/functions/v1/meta-from-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    });
+    if (!resp.ok) throw new Error('取得に失敗しました');
+    const meta = await resp.json();
+
+    // 取得結果をフォームへ反映（空は無視）
+    if (meta.name) document.getElementById('product_name').value = meta.name;
+    if (meta.brand) document.getElementById('product_author').value = meta.brand;
+    if (meta.image) document.getElementById('product_image_url').value = meta.image;
+    if (meta.price_text) document.getElementById('price_text').value = meta.price_text;
+    if (meta.product_url) document.getElementById('product_link_url').value = meta.product_url;
+
+    // プレビューを更新済みにしたければ、ここで input イベントを発火させてもOK
+    alert('商品情報を反映しました');
+    picker.classList.add('hidden'); picker.classList.remove('flex');
+  } catch (e) {
+    alert('自動取得できませんでした。手入力でお願いします。');
+  }
+});
+
   const preview = {
     img: document.getElementById('previewImg'),
     genre: document.getElementById('previewGenre'),
