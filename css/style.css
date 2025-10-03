@@ -283,3 +283,25 @@ header .nav-mypage {
   body, .bg-gray-50, .bg-white { background: var(--bg) !important; }
   .text-gray-900 { color: var(--text) !important; }
 }
+
+// ===== modal helpers =====
+window.openModal = (sel) => {
+  const el = typeof sel === 'string' ? document.querySelector(sel) : sel;
+  if (!el) return;
+  el.classList.remove('hidden');
+  el.setAttribute('aria-hidden', 'false');
+};
+window.closeModal = (sel) => {
+  const el = typeof sel === 'string' ? document.querySelector(sel) : sel;
+  if (!el) return;
+  el.classList.add('hidden');
+  el.setAttribute('aria-hidden', 'true');
+};
+
+// data-close で閉じる
+document.addEventListener('click', (e) => {
+  const target = e.target.closest('[data-close]');
+  if (!target) return;
+  const sel = target.getAttribute('data-close');
+  window.closeModal(sel);
+});
