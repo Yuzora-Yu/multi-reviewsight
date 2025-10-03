@@ -80,11 +80,13 @@ window.reviewCard = (r) => {
   </a>`;
 };
 
-// ヘッダーのログイン/ログアウト切替
+// --- ヘッダー（ログイン/ログアウト切替 + 管理リンク） ---
 document.addEventListener('DOMContentLoaded', async () => {
   try {
     const sb = window.sb;
     const { data: { user } } = await sb.auth.getUser();
+
+    // ログイン/ログアウト切替
     const loginLink = document.getElementById('loginLink');
     if (loginLink) {
       if (user) {
@@ -99,6 +101,28 @@ document.addEventListener('DOMContentLoaded', async () => {
         loginLink.setAttribute('href', 'auth.html');
       }
     }
+
+    // 管理者のみ「管理」ナビを表示
+    if (user) {
+      try {
+        // DBの is_admin() 関数をRPCで呼ぶ（SQLは前に追加済み）
+        const { data: isAdmin, error } = await sb.rpc('is_admin');
+        if (!error && isAdmin) {
+          const nav = document.querySelector('header nav');
+          if (nav && !nav.querySelector('[data-admin-link]')) {
+            const a = document.createElement('a');
+            a.href = 'admin.html';
+            a.className = 'btn-outline';
+            a.textContent = '管理';
+            a.setAttribute('data-admin-link', '1');
+            nav.appendChild(a);
+          }
+        }
+      } catch (e) {
+        console.warn('is_admin RPC error:', e);
+      }
+    }
+
     console.log('Supabase reachable.');
   } catch (e) {
     alert('ネットワークまたは設定エラーでDBに到達できませんでした');
