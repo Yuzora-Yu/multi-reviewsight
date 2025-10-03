@@ -99,4 +99,82 @@ async function init() {
     const listEl = document.getElementById('commentList');
     const moreBtn = ensureMoreButton();
 
-    moreBtn.ad
+    moreBtn.addEventListener('click', async () => {
+      page++;
+      await fetchAndRenderPage(page);
+    });
+
+    // 初回読み込み（page=0を描画）
+    reloadComments();
+
+    async function reloadComments() {
+      page = 0;
+      listEl.innerHTML = '';
+      moreBtn.classList.add('hidden');
+      await fetchAndRenderPage(0);
+    }
+
+    async function fetchAndRenderPage(p) {
+      const from = p * PAGE;
+      const to   = from + PAGE - 1;
+
+      try {
+        const { data, error } = await sb
+          .from('review_comments')
+          .select('id, body, commenter_name, created_at')
+          .eq('review_id', reviewId)
+          .order('created_at', { ascending: false })
+          .range(from, to);
+        if (error) throw error;
+
+        const items = (data || []).map(c => commentItem(c)).join('');
+        listEl.insertAdjacentHTML('beforeend', items);
+
+        // 次ページがあり得るときだけ「もっと見る」を出す（取得件数が満杯なら続きがある可能性）
+        if ((data || []).length === PAGE) {
+          moreBtn.classList.remove('hidden');
+        } else {
+          moreBtn.classList.add('hidden');
+        }
+      } catch (e) {
+        console.error('review_comments fetch failed', e);
+        if (!listEl.innerHTML) listEl.innerHTML = `<li class="meta">コメントの取得に失敗しました</li>`;
+        moreBtn.classList.add('hidden');
+      }
+    }
+
+    function commentItem(c) {
+      const name = escapeHtml(c.commenter_name || '匿名');
+      const when = new Date(c.created_at).toLocaleString();
+      const body = escapeHtml(c.body || '');
+      return `
+        <li class="review-box">
+          <div class="meta">${name} ｜ ${when}</div>
+          <div class="mt-1">${body}</div>
+        </li>`;
+    }
+
+    function ensureMoreButton() {
+      // HTML側に <div class="text-center mt-3"><button id="commentMore" ...> が無い場合は作る
+      let btn = document.getElementById('commentMore');
+      if (!btn) {
+        const wrap = document.createElement('div');
+        wrap.className = 'text-center mt-3';
+        btn = document.createElement('button');
+        btn.id = 'commentMore';
+        btn.className = 'btn-outline hidden';
+        btn.textContent = 'もっと見る';
+        wrap.appendChild(btn);
+        const commentsSection = document.getElementById('commentList')?.parentElement;
+        commentsSection?.appendChild(wrap);
+      }
+      return btn;
+    }
+  }
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, s => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[s]));
+}
