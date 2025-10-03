@@ -11,13 +11,13 @@ document.addEventListener('DOMContentLoaded', () => {
 async function init() {
   const sb = window.sb;
 
-  // ===== 新着5件 =====
+  // ===== 新着4件 =====
   {
     const { data, error } = await sb
       .from('reviews')
       .select('id, title, score, author_name, genre, product_name, product_image_url, created_at')
       .order('created_at', { ascending:false })
-      .limit(5);
+      .limit(4);
 
     const wrap = document.getElementById('latestList');
     if (!wrap) return;
