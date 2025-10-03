@@ -1,4 +1,8 @@
-// js/post.js — GENRES自動注入 / レビュアーネーム自動入力 / 入力→確認→投稿（確実動作）
+// js/post.js — GENRES自動注入 / レビュアーネーム自動入力 / Amazon自動転記（Edge Function）
+//               入力→確認→投稿（確実動作）
+
+// ← ここにあなたの Edge Function URL を入れてください（meta-from-url を deploy 後のURL）
+const META_FN_URL = 'https://<your-project-id>.supabase.co/functions/v1/meta-from-url';
 
 document.addEventListener('DOMContentLoaded', () => {
   main().catch(e => {
@@ -21,7 +25,7 @@ async function main() {
   // 2) レビュアーネームをページ表示直後に自動入力
   await presetAuthorName(sb);
 
-  // 3) 商品選択モーダル（簡易）
+  // 3) 商品選択モーダル（Amazon転記つき）
   setupProductPicker();
 
   // 4) 入力 → 確認
@@ -46,12 +50,11 @@ async function main() {
       const payload = collectPayload();
 
       // サニタイズ（本文）
-      payload.body = DOMPurify.sanitize(payload.body);
+      if (window.DOMPurify) payload.body = DOMPurify.sanitize(payload.body);
 
       // スキーマに合わせて null を適切に
       if (!payload.edit_password) delete payload.edit_password;
 
-      // INSERT
       const { data, error } = await sb.from('reviews').insert(payload).select('id').single();
       if (error) throw error;
 
@@ -99,15 +102,58 @@ function setupProductPicker() {
 
   openBtn.addEventListener('click', () => picker.classList.remove('hidden'));
   closeBtn.addEventListener('click', () => picker.classList.add('hidden'));
+
+  // Amazon 検索（別タブ）
   openAmazon.addEventListener('click', () => {
     const q = encodeURIComponent(document.getElementById('amazonQuery').value || '');
     window.open(`https://www.amazon.co.jp/s?k=${q}`, '_blank', 'noopener');
   });
-  autoFetch.addEventListener('click', () => {
+
+  // URL からの自動取得（Edge Function 経由）
+  autoFetch.addEventListener('click', async () => {
     const url = document.getElementById('amazonUrl').value.trim();
-    if (url) {
-      document.getElementById('product_link_url').value = url;
+    if (!url) return alert('Amazonの商品URLを貼り付けてください');
+
+    const btn = autoFetch;
+    toggleBtn(btn, true, '取得中…');
+
+    try {
+      // Edge Function 呼び出し
+      const r = await fetch(META_FN_URL, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ url })
+      });
+      const data = await r.json().catch(() => ({}));
+
+      if (!r.ok || !data?.ok) {
+        console.warn('meta-from-url failed:', data);
+        alert('取得に失敗しました。URLが正しいか確認してください。');
+        return;
+      }
+
+      // 反映（互換キーも許容）
+      if (data.product_name || data.name) {
+        document.getElementById('product_name').value = data.product_name || data.name;
+      }
+      if (data.author_or_maker || data.brand) {
+        document.getElementById('product_author').value = data.author_or_maker || data.brand;
+      }
+      if (data.price_text) {
+        document.getElementById('price_text').value = data.price_text;
+      }
+      if (data.product_image_url || data.image) {
+        document.getElementById('product_image_url').value = data.product_image_url || data.image;
+      }
+
+      document.getElementById('product_link_url').value = data.product_url || url;
+      window.toast?.('Amazonから転記しました');
       picker.classList.add('hidden');
+    } catch (e) {
+      console.error(e);
+      alert('取得時にエラーが発生しました');
+    } finally {
+      toggleBtn(btn, false);
     }
   });
 }
