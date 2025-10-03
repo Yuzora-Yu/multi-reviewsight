@@ -3,86 +3,86 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>レビュー詳細 - だれでもレビュー</title>
+  <title>だれでもレビュー｜レビュー詳細</title>
 
-  <!-- GitHub Pages（サブパス） -->
   <base href="/multi-reviewsight/">
 
-  <!-- Styles -->
-  <link rel="stylesheet" href="css/style.css" />
-
-  <!-- Tailwind（CDN） -->
+  <!-- Tailwind（必要なら） -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Supabase SDK（必ず先に） -->
+  <!-- Supabase SDK -->
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <!-- サニタイズ -->
-  <script defer src="https://cdn.jsdelivr.net/npm/dompurify@3.1.7/dist/purify.min.js"></script>
+  <!-- テーマCSS -->
+  <link rel="stylesheet" href="css/style.css?v=2025-10-03" />
 
-  <!-- 共通ユーティリティ -->
-  <script defer src="js/common.js"></script>
-
-  <!-- このページ専用 -->
-  <script defer src="js/review.js"></script>
+  <!-- 共通JS（先に読み込む） -->
+  <script defer src="js/common.js?v=2025-10-03"></script>
 </head>
 <body class="bg-gray-50 text-gray-900">
   <header class="border-b bg-white">
-    <div class="mx-auto max-w-5xl px-4 py-4 flex items-center justify-between">
-      <a href="./" class="font-bold text-xl">だれでもレビュー</a>
-      <nav class="flex gap-3">
-        <a href="post.html" class="btn">レビュー投稿</a>
-        <a href="my.html" class="btn-outline">マイページ</a>
-        <a id="loginLink" href="auth.html" class="text-sm underline">ログイン / 登録</a>
+    <div class="mx mx-auto flex items-center justify-between" style="padding: 12px 20px;">
+      <a class="brand" href="index.html">だれでもレビュー</a>
+      <nav id="navRight" class="flex items-center gap-2">
+        <a id="myLink" class="btn nav-mypage" href="my.html">マイページ</a>
+        <!-- 管理ボタンは JS でマイページとログインの間に挿入 -->
+        <a id="loginLink" class="btn-outline" href="auth.html">ログイン / 登録</a>
       </nav>
     </div>
   </header>
 
-  <main class="mx-auto max-w-5xl px-4 py-6 space-y-8">
-
-    <!-- 上：レビュー詳細 -->
-    <section id="detailSection" class="bg-white p-5 rounded shadow">
-      <!-- jsで描画 -->
-    </section>
-
-    <!-- 中：評価（いいね）・コメント投稿 -->
-    <section class="bg-white p-5 rounded shadow">
-      <div class="flex items-center justify-between flex-wrap gap-3">
-        <h2 class="sec">評価・コメント</h2>
-        <div class="flex items-center gap-3">
-          <button id="likeBtn" class="btn-outline">♡ いいね</button>
-          <span id="likeCount" class="text-sm text-gray-600">いいね：0</span>
+  <main class="mx">
+    <section class="block">
+      <div class="flex items-start gap-4">
+        <div class="mediaBox lg" id="detailThumbBox">
+          <img id="detailThumb" src="https://placehold.co/256x256?text=Loading" alt="" data-fit="auto">
+        </div>
+        <div class="flex-1">
+          <h1 class="title" id="detailTitle">タイトル読み込み中</h1>
+          <p class="meta" id="detailMeta">ジャンル / レビュアー名 / 日付</p>
+          <div class="meta" id="detailScore">スコア: -</div>
         </div>
       </div>
 
-      <div id="commentBox" class="mt-4">
-        <div class="text-sm text-gray-600 mb-1">
-          表示名：<span id="commentDisplayName" class="font-semibold">（未ログイン）</span>
-        </div>
-        <form id="commentForm" class="space-y-3">
-          <textarea id="commentBody" rows="4" class="inp" placeholder="コメントを書く（ログインが必要です）" required></textarea>
-          <div class="flex gap-3">
-            <button class="btn" type="submit">コメントを投稿</button>
-            <a id="toAuth" href="auth.html" class="btn-outline">ログイン / 登録</a>
-          </div>
-        </form>
-        <p id="commentNotice" class="meta mt-2 hidden">ログイン後にコメントできます。</p>
-      </div>
+      <article id="detailBody" class="mt-4 review-box">本文読み込み中…</article>
     </section>
-
-    <!-- 下：コメント履歴（掲示板風＋ページング） -->
-    <section class="bg-white p-5 rounded shadow">
-      <div class="flex items-center justify-between">
-        <h2 class="sec">コメント履歴</h2>
-        <div class="flex items-center gap-2 text-sm">
-          <button id="prevPage" class="btn-outline">前へ</button>
-          <span id="pageInfo" class="meta">1 / 1</span>
-          <button id="nextPage" class="btn-outline">次へ</button>
-        </div>
-      </div>
-      <div id="commentList" class="mt-4 space-y-3"></div>
-    </section>
-
   </main>
+
+  <footer class="py-10 text-center text-sm text-gray-500">© 2025 だれでもレビュー</footer>
+
+  <!-- 詳細ページ用の読み込みJS（fitThumbs 呼び出し含む） -->
+  <script>
+  document.addEventListener('DOMContentLoaded', async () => {
+    // Supabase クライアントは common.js 側で window.sb として生成済み想定
+    const sb = window.sb;
+    const id = new URLSearchParams(location.search).get('id');
+
+    try {
+      const { data: r, error } = await sb
+        .from('reviews')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+      if (error || !r) throw error || new Error('not found');
+
+      // タイトル等
+      document.getElementById('detailTitle').textContent = r.title;
+      document.getElementById('detailMeta').textContent =
+        `${r.genre} / ${r.author_name || '匿名'} / ${new Date(r.created_at).toLocaleDateString()}`;
+      document.getElementById('detailScore').textContent = `スコア: ${r.score}`;
+
+      // 画像
+      const imgEl = document.getElementById('detailThumb');
+      imgEl.src = r.product_image_url || 'https://placehold.co/256x256?text=No+Image';
+      window.fitThumbs(document.getElementById('detailThumbBox'));
+
+      // 本文（プレーンテキストを想定。HTMLなら innerHTML に切替）
+      document.getElementById('detailBody').textContent = r.body || '';
+    } catch (e) {
+      console.error(e);
+      document.getElementById('detailBody').textContent = '読み込みに失敗しました';
+    }
+  });
+  </script>
 </body>
 </html>
