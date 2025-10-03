@@ -275,4 +275,36 @@ header .nav-mypage {
   max-height: calc(1.15em * 2); /* 2行分の高さでカット */
   text-wrap: balance;
 }
+/* ==== 可変アスペクト対応サムネ ==== */
+.mediaBox{
+  width: 76px;               /* ここはカードに合わせて調整可 */
+  height: 76px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #eef2f7;
+  flex: 0 0 auto;
+}
+.mediaBox img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;          /* デフォルトはカバー（正方形時の見栄え用） */
+  display: block;
+}
+
+/* 横長なら「幅に合わせる」 */
+.mediaBox img.fit-w{
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+/* 縦長なら「高さに合わせる」 */
+.mediaBox img.fit-h{
+  width: auto;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* もしレビュー詳細などで大きいサムネ枠が必要なら別サイズもOK */
+.mediaBox.lg { width: 128px; height: 128px; border-radius: 14px; }
 
