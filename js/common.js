@@ -80,6 +80,29 @@ window.reviewCard = (r) => {
   </a>`;
 };
 
+// カード内に表示数/いいね/コメントを含めたバージョン
+window.reviewCardWithStats = (r, { views = 0, likes = 0, comments = 0 } = {}) => {
+  const img = r.product_image_url || 'https://placehold.co/128x128?text=No+Image';
+  const url = `review.html?id=${r.id}`;
+  return `
+  <a class="card" href="${url}">
+    <img src="${img}" alt="">
+    <div class="flex-1">
+      <div class="meta">${r.genre}｜${new Date(r.created_at).toLocaleDateString()}</div>
+      <div class="title">${r.title}</div>
+      <div class="meta">${r.product_name} / ${r.author_name || '匿名'}</div>
+
+      <!-- 統計行（カード内フッター） -->
+      <div class="card-stats">
+        <span>表示数: ${views ?? 0}</span>
+        <span>いいね: ${likes ?? 0}</span>
+        <span>コメント: ${comments ?? 0}</span>
+      </div>
+    </div>
+    <div class="text-2xl font-bold">${r.score}</div>
+  </a>`;
+};
+
 // --- ヘッダー（ログイン/ログアウト切替 + 管理リンク） ---
 document.addEventListener('DOMContentLoaded', async () => {
   try {
