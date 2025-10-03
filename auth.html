@@ -5,45 +5,46 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>だれでもレビュー｜ログイン / 会員登録</title>
 
-  <!-- GitHub Pages（サブパス） -->
+  <!-- GitHub Pages（サブパス運用の想定。必要に応じて調整） -->
   <base href="/multi-reviewsight/">
 
-  <!-- Styles -->
-  <link rel="stylesheet" href="css/style.css" />
+  <!-- Styles（共通テーマ。モーダル/カード等のCSSを含む） -->
+  <link rel="stylesheet" href="css/style.css?v=2025-10-03" />
 
-  <!-- Tailwind（CDN） -->
+  <!-- Tailwind（ユーティリティ用途） -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Supabase SDK（必ず先に） -->
+  <!-- Supabase SDK（必須） -->
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <!-- 共有ユーティリティ -->
-  <script defer src="js/common.js"></script>
+  <!-- 共通ユーティリティ（ヘッダー制御・モーダル・カード等） -->
+  <script defer src="js/common.js?v=2025-10-03"></script>
 
-  <!-- このページ専用 -->
-  <script defer src="js/auth.js"></script>
+  <!-- このページ専用処理 -->
+  <script defer src="js/auth.js?v=2025-10-03"></script>
 </head>
 <body class="bg-gray-50 text-gray-900">
-
+  <!-- ===== Header ===== -->
   <header class="border-b bg-white">
-    <div class="mx-auto max-w-3xl px-4 py-4 flex items-center justify-between">
-      <a href="./" class="font-bold text-xl">だれでもレビュー</a>
-      <nav class="flex gap-3">
-        <a href="my.html" class="btn-outline">マイページ</a>
-        <a id="loginLink" href="auth.html" class="text-sm underline">ログイン / 登録</a>
+    <div class="mx mx-auto flex items-center justify-between" style="padding: 12px 20px;">
+      <a class="brand" href="./">だれでもレビュー</a>
+      <nav id="navRight" class="flex items-center gap-2">
+        <a id="myLink" class="btn nav-mypage" href="my.html">マイページ</a>
+        <!-- 管理ボタンは common.js が「マイページとログインの間」に挿入 -->
+        <a id="loginLink" class="btn-outline" href="auth.html">ログイン / 登録</a>
       </nav>
     </div>
   </header>
 
-  <main class="mx-auto max-w-3xl px-4 py-8 space-y-6">
-
-    <section class="bg-white p-5 rounded shadow">
-      <h1 class="sec mb-2">ログイン / 会員登録</h1>
+  <!-- ===== Main ===== -->
+  <main class="mx mx-auto space-y-6" style="max-width: 720px;">
+    <section class="block">
+      <h1 class="title mb-2">ログイン / 会員登録</h1>
       <p class="meta">メールでのログイン/登録に対応しています。</p>
 
       <div class="mt-4 flex flex-wrap gap-3">
-        <button id="openLogin" class="btn">ログイン</button>
-        <button id="openRegister" class="btn-outline">新規会員登録</button>
+        <button id="openLogin" class="btn" onclick="window.openModal('#modalLogin')">ログイン</button>
+        <button id="openRegister" class="btn-outline" onclick="window.openModal('#modalRegister')">新規会員登録</button>
         <button id="logoutBtn" class="btn-outline hidden">ログアウト</button>
       </div>
 
@@ -53,8 +54,8 @@
     </section>
 
     <!-- ヘルプ -->
-    <section class="bg-white p-5 rounded shadow">
-      <h2 class="sec">メールの流れ（登録）</h2>
+    <section class="block">
+      <h2 class="title">メールの流れ（登録）</h2>
       <ol class="list-decimal pl-6 space-y-1 text-sm text-gray-600">
         <li>「新規会員登録」→ メール/パスワード/確認用パスワード を入力して <b>仮登録</b></li>
         <li>自動送信されたメールのリンクを押す（日本語の案内文）</li>
@@ -63,34 +64,36 @@
     </section>
   </main>
 
-  <!-- ========= モーダル：ログイン ========= -->
-  <div id="modalLogin" class="modal hidden">
-    <div class="modal-panel">
-      <div class="modal-head">
-        <h3 class="sec">ログイン</h3>
-        <button class="modal-close" data-close="modalLogin">×</button>
+  <!-- ======= Modal: ログイン ======= -->
+  <div id="modalLogin" class="modal hidden" aria-hidden="true">
+    <div class="overlay"></div>
+    <div class="panel">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="title">ログイン</h3>
+        <button class="btn-ghost" data-close="#modalLogin">閉じる</button>
       </div>
       <form id="loginForm" class="space-y-3">
         <input id="loginEmail" class="inp" type="email" placeholder="メールアドレス" required />
         <input id="loginPass" class="inp" type="password" placeholder="パスワード" required />
-        <button class="btn w-full">ログイン</button>
+        <button class="btn w-full" type="submit">ログイン</button>
       </form>
-      <div class="meta mt-3">※ パスワードを忘れた場合は再登録してください。</div>
+      <p class="meta mt-3">※ パスワードを忘れた場合は再登録してください。</p>
     </div>
   </div>
 
-  <!-- ========= モーダル：新規登録（仮登録） ========= -->
-  <div id="modalRegister" class="modal hidden">
-    <div class="modal-panel">
-      <div class="modal-head">
-        <h3 class="sec">新規会員登録（仮登録）</h3>
-        <button class="modal-close" data-close="modalRegister">×</button>
+  <!-- ======= Modal: 新規会員登録（仮登録） ======= -->
+  <div id="modalRegister" class="modal hidden" aria-hidden="true">
+    <div class="overlay"></div>
+    <div class="panel">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="title">新規会員登録（仮登録）</h3>
+        <button class="btn-ghost" data-close="#modalRegister">閉じる</button>
       </div>
       <form id="registerForm" class="space-y-3">
         <input id="regEmail" class="inp" type="email" placeholder="メールアドレス" required />
         <input id="regPass" class="inp" type="password" placeholder="パスワード（8文字以上）" minlength="8" required />
         <input id="regPass2" class="inp" type="password" placeholder="確認用パスワード" minlength="8" required />
-        <button class="btn w-full">仮登録メールを送信</button>
+        <button class="btn w-full" type="submit">仮登録メールを送信</button>
       </form>
       <p class="meta mt-3">
         ※ 入力したアドレス宛に確認メールが届きます。メールの「本登録」リンクを押してください。
@@ -98,20 +101,20 @@
     </div>
   </div>
 
-  <!-- ========= モーダル：レビュアーネーム（本登録） ========= -->
-  <div id="modalName" class="modal hidden">
-    <div class="modal-panel">
-      <div class="modal-head">
-        <h3 class="sec">本登録：レビュアーネーム</h3>
-        <button class="modal-close" data-close="modalName">×</button>
+  <!-- ======= Modal: レビュアーネーム（本登録） ======= -->
+  <div id="modalName" class="modal hidden" aria-hidden="true">
+    <div class="overlay"></div>
+    <div class="panel">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="title">本登録：レビュアーネーム</h3>
+        <button class="btn-ghost" data-close="#modalName">閉じる</button>
       </div>
       <p class="mb-2 text-sm">メール：<span id="nameEmail" class="font-mono"></span></p>
       <form id="nameForm" class="space-y-3">
         <input id="displayName" class="inp" maxlength="30" placeholder="表示する名前（レビュアーネーム）" required />
-        <button class="btn w-full">本登録する</button>
+        <button class="btn w-full" type="submit">本登録する</button>
       </form>
     </div>
   </div>
-
 </body>
 </html>
