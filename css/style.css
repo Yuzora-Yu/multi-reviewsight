@@ -1,13 +1,141 @@
+/* css/style.css  — すべて置換 */
+
+/* ===== CSS変数（テーマ） ===== */
+:root{
+  --bg: #0b0d12;             /* ダーク基調に強めのコントラスト */
+  --panel: #0f1218;
+  --panel-2: #131824;
+  --text: #e7e9ee;
+  --muted: #9aa2b1;
+  --border: rgba(255,255,255,.08);
+  --accent: #7bb8ff;         /* 空のブルー（X寄り） */
+  --accent-2: #ff8bc1;       /* フクシャ（IG寄り） */
+  --ring: rgba(123,184,255,.35);
+  --shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.04);
+}
+
+/* 端末がライトモードのとき（自動反転） */
+@media (prefers-color-scheme: light){
+  :root{
+    --bg: #f7f8fb;
+    --panel: #ffffff;
+    --panel-2: #fbfbfe;
+    --text: #141923;
+    --muted: #5b6271;
+    --border: rgba(12,17,29,.08);
+    --ring: rgba(135,180,255,.45);
+    --shadow: 0 8px 20px rgba(22,27,45,.06);
+  }
+}
+
 *{box-sizing:border-box}
-body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
-.sec{font-weight:700;font-size:1.125rem}
-.inp{border:1px solid #d1d5db;border-radius:.375rem;padding:.5rem .75rem;width:100%;background:#fff}
-.label{font-size:.875rem;color:#4b5563;margin-bottom:.25rem;display:block}
-.btn{background:#111827;color:#fff;padding:.5rem .75rem;border-radius:.375rem}
-.btn:hover{opacity:.9}
-.btn-outline{border:1px solid #111827;color:#111827;padding:.5rem .75rem;border-radius:.375rem;background:#fff}
-.card{display:flex;gap:.75rem;border:1px solid #e5e7eb;border-radius:.5rem;padding:.75rem;background:#fff}
-.card img{width:72px;height:72px;object-fit:cover;border-radius:.375rem;background:#f3f4f6}
-.meta{font-size:.75rem;color:#6b7280}
-.title{font-weight:700}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans JP", Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+  background: radial-gradient(1200px 800px at 100% -10%, rgba(127,170,255,.10), transparent 60%),
+              radial-gradient(900px 700px at -10% 110%, rgba(255,125,199,.10), transparent 60%),
+              var(--bg);
+  color: var(--text);
+}
+
+/* ===== ヘッダー ===== */
+header{
+  position: sticky; top: 0; z-index: 20;
+  backdrop-filter: saturate(140%) blur(10px);
+  background: color-mix(in srgb, var(--panel) 75%, transparent);
+  border-bottom: 1px solid var(--border);
+}
+header .brand{
+  display:flex; align-items:center; gap:.6rem;
+  font-weight:800; letter-spacing:.2px;
+  background: linear-gradient(90deg,var(--accent),var(--accent-2));
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+
+/* ===== レイアウトコンテナ ===== */
+.mx{max-width:1024px;margin:0 auto;padding:14px 18px}
+
+/* ===== ボタン ===== */
+.btn,.btn-outline{
+  display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
+  padding: .6rem .9rem; border-radius: 14px; font-weight: 700;
+  transition: .2s ease; text-decoration:none; cursor:pointer; user-select:none;
+  border: 1px solid transparent;
+}
+.btn{
+  color:#0c1220;
+  background: linear-gradient(180deg, #cfe4ff, #9dc7ff);
+  box-shadow: var(--shadow);
+}
+.btn:hover{ transform: translateY(-1px) scale(1.01) }
+.btn:active{ transform: translateY(0) scale(.99) }
+
+.btn-outline{
+  color: var(--text); background: color-mix(in srgb, var(--panel) 80%, transparent);
+  border-color: var(--border);
+}
+.btn-outline:hover{ border-color: color-mix(in srgb, var(--accent) 60%, var(--border)) }
+
+/* 小ボタン */
+.btn-xs{ padding: .4rem .6rem; border-radius: 12px; font-weight: 700; font-size:.85rem }
+
+/* ===== 入力系 ===== */
+.inp, textarea.inp, select.inp{
+  width:100%; padding:.7rem .9rem; border-radius: 12px;
+  border:1px solid var(--border); background: var(--panel-2); color: var(--text);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.03);
+  outline:none; transition:.15s;
+}
+.inp:focus{ border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  box-shadow: 0 0 0 6px var(--ring) }
+.label{font-size:.9rem;color:var(--muted);margin-bottom:.35rem;display:block}
+
+/* ===== セクション・カード ===== */
+section.block{
+  background: color-mix(in srgb, var(--panel) 86%, transparent);
+  border:1px solid var(--border);
+  border-radius: 18px; padding: 18px; box-shadow: var(--shadow);
+}
+.sec{font-weight:800;font-size:1.05rem;letter-spacing:.2px}
+
+/* カード（レビュー一覧用） */
+.card{
+  display:flex; gap:12px; align-items:center;
+  padding:12px; border:1px solid var(--border); border-radius: 16px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--panel-2) 92%, transparent), var(--panel));
+  box-shadow: var(--shadow);
+}
+.card img{width:76px;height:76px;object-fit:cover;border-radius:12px;
+  border:1px solid var(--border); background:#111}
+.meta{font-size:.8rem;color:var(--muted)}
+.title{font-weight:800; letter-spacing:.2px}
+
+/* ランキング行 */
+.rank-row{display:flex;align-items:center;gap:12px}
+.rank-num{width:34px;text-align:right;font-size:1.35rem;font-weight:800;opacity:.9}
+
+/* モーダル（商品選択） */
+#productPicker{
+  position: fixed; inset: 0; display:none; align-items:center; justify-content:center;
+  background: rgba(8,10,18,.55); backdrop-filter: blur(6px);
+}
+#productPicker.flex{ display:flex }
+#productPicker .modal{
+  width:min(680px,94vw); background: var(--panel); border:1px solid var(--border);
+  border-radius: 18px; padding:18px; box-shadow: var(--shadow)
+}
+
+/* ツールチップ風バッジ */
+.badge{
+  padding:.2rem .55rem; border-radius:999px; border:1px solid var(--border);
+  background: color-mix(in srgb, var(--panel-2) 85%, transparent);
+  font-size:.78rem; color: var(--muted); font-weight:700;
+}
+
+/* テーブルレスポンシブ（必要なら） */
+.table{width:100%;border-collapse:separate;border-spacing:0 10px}
+.table th,.table td{padding:10px 12px}
+
+/* ヘルパ */
 .hidden{display:none}
