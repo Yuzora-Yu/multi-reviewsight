@@ -5,6 +5,7 @@
   - sRGBの淡色パレットで統一（PC/スマホの色差を低減）
   - 入力系とレビュー枠の配色を完全統一
   - スマホ横画面/極小幅でボタン文字がはみ出さないレスポンシブ
+  - 可変アスペクト対応サムネ(mediaBox)を追加
 ------------------------------------------------------------------- */
 
 /* ===== ベース設定 ===== */
@@ -72,7 +73,7 @@ header{
   background: color-mix(in srgb, #ffffff 85%, transparent);
   border-bottom:1px solid var(--line);
 }
-.brand{ font-weight:900; font-size: clamp(18px, 2.2vw, 22px); letter-spacing:.02em; color:var(--text); text-decoration:none; }
+.brand{ font-weight:900; font-size: clamp(18px, 2.2vw, 22px); letter-spacing:.02em; color: var(--text); text-decoration:none; }
 footer{ padding:36px 0; color:var(--muted) }
 
 /* ===== セクション / カード / レビュー枠 ===== */
@@ -89,10 +90,12 @@ footer{ padding:36px 0; color:var(--muted) }
   background: var(--surface-2);
   border:1px solid var(--line);
   box-shadow: var(--shadow-2);
+  flex-wrap: wrap; /* 下段（統計行）に回せるように */
 }
-.card img{ width:76px; height:76px; object-fit:cover; border-radius:12px; background:#eef2f7 }
 .title{ font-weight:800; font-size:1.02rem }
 .meta{ font-size:.9rem; color:var(--muted) }
+
+/* ランキングの順位バッジ */
 .rank-num{
   width:40px; height:40px; border-radius:12px;
   display:flex; align-items:center; justify-content:center;
@@ -181,18 +184,14 @@ select {
 
 /* 文字のはみ出しに強い設定 */
 .btn{
-  /* 高さは自動。行が増えたら伸びる */
-  height: auto; min-height: 44px; /* タップ領域確保 */
+  height: auto; min-height: 44px;
   padding: .7rem 1rem;
-  /* 極小幅で文字サイズを自動で落とす */
   font-size: clamp(12px, 2.8vw, 15px);
-  /* 折り返し許可＋自然な改行 */
   white-space: normal;
   text-wrap: balance;
   overflow-wrap: anywhere;
   word-break: keep-all;
 }
-/* ボタン内のアイコンがある場合の余白最適化 */
 .btn > svg, .btn > img { flex: 0 0 auto; }
 
 /* 小さめボタン */
@@ -203,49 +202,7 @@ select {
   font-size: clamp(11px, 2.6vw, 13px);
 }
 
-/* ===== 汎用ユーティリティ ===== */
-.hidden{ display:none !important }
-.text-sm{ font-size:.9rem }
-.text-right{ text-align:right }
-.text-center{ text-align:center }
-.w-44{ width:11rem } .w-36{ width:9rem }
-.rounded{ border-radius: var(--radius) }
-
-/* 長い商品名・レビュータイトルがはみ出す場合に付与して使う */
-.u-break { overflow-wrap:anywhere; word-break:break-word; }
-
-/* ===== スマホ横/極小幅向けのレスポンシブ調整 ===== */
-/* 横幅が狭い、または横向きで高さが低い時に「詰める」 */
-@media (max-width: 640px), (max-height: 420px) and (orientation: landscape) {
-  .mx { padding: 14px 14px; }
-  header .mx, footer .mx { padding: 10px 14px; }
-
-  /* ボタンはよりコンパクトに */
-  .btn { padding: .55rem .8rem; min-height: 40px; font-size: clamp(12px, 3vw, 14px); }
-
-  /* 入力系の上下を詰める（はみ出し軽減） */
-  .inp, input, textarea, select { padding: 10px 12px !important; }
-
-  /* グリッドを1列中心に */
-  .grid-2 { grid-template-columns: 1fr !important; gap: 12px; }
-
-  /* カードの詰め */
-  .card { padding: 12px; gap: 12px; }
-  .card img { width:64px; height:64px; }
-
-  /* タイトルは自動で折り返し */
-  .title { font-size: 1rem; line-height: 1.25; }
-}
-
-/* ===== ダークモード環境でも色は固定 ===== */
-@media (prefers-color-scheme: dark) {
-  :root { color-scheme: light; }
-  body, .bg-gray-50, .bg-white { background: var(--bg) !important; }
-  .text-gray-900 { color: var(--text) !important; }
-}
-
-/* カードの中にフッター行（統計）を入れる */
-.card { flex-wrap: wrap; } /* 下段に回せるように */
+/* ===== カード内フッター（統計） ===== */
 .card .card-stats {
   width: 100%;
   margin-top: 8px;
@@ -256,28 +213,12 @@ select {
   color: var(--muted);
   border-top: 1px solid var(--line);
   padding-top: 8px;
-  justify-content: flex-end; /* 右寄せ。左寄せにしたければ flex-start */
+  justify-content: flex-end;
 }
 
-/* マイページボタン：2行まで＆縦中央 */
-header a[href*="my.html"],
-header .nav-mypage {
-  display: flex;
-  align-items: center;       /* 縦中央 */
-  justify-content: center;   /* 横中央（任意） */
-  min-height: 40px;          /* ヘッダー高さに合わせて調整可 */
-  padding-inline: 12px;
-  text-align: center;
-  font-size: clamp(11px, 2.6vw, 14px);
-  line-height: 1.15;
-  white-space: normal;       /* 折り返し許可 */
-  overflow: hidden;
-  max-height: calc(1.15em * 2); /* 2行分の高さでカット */
-  text-wrap: balance;
-}
-/* ==== 可変アスペクト対応サムネ ==== */
+/* ===== 可変アスペクト対応サムネ ===== */
 .mediaBox{
-  width: 76px;               /* ここはカードに合わせて調整可 */
+  width: 76px;
   height: 76px;
   border-radius: 12px;
   overflow: hidden;
@@ -287,24 +228,57 @@ header .nav-mypage {
 .mediaBox img{
   width: 100%;
   height: 100%;
-  object-fit: cover;          /* デフォルトはカバー（正方形時の見栄え用） */
+  object-fit: cover; /* デフォルトは cover */
   display: block;
 }
-
-/* 横長なら「幅に合わせる」 */
-.mediaBox img.fit-w{
-  width: 100%;
-  height: auto;
-  object-fit: contain;
-}
-
-/* 縦長なら「高さに合わせる」 */
-.mediaBox img.fit-h{
-  width: auto;
-  height: 100%;
-  object-fit: contain;
-}
-
-/* もしレビュー詳細などで大きいサムネ枠が必要なら別サイズもOK */
+.mediaBox img.fit-w{ width: 100%; height: auto; object-fit: contain; }
+.mediaBox img.fit-h{ width: auto; height: 100%; object-fit: contain; }
+/* 詳細ページ用の大きい枠 */
 .mediaBox.lg { width: 128px; height: 128px; border-radius: 14px; }
+@media (min-width: 640px){
+  .mediaBox.lg { width: 180px; height: 180px; }
+}
 
+/* ===== 汎用ユーティリティ ===== */
+.hidden{ display:none !important }
+.text-sm{ font-size:.9rem }
+.text-right{ text-align:right }
+.text-center{ text-align:center }
+.w-44{ width:11rem } .w-36{ width:9rem }
+.rounded{ border-radius: var(--radius) }
+.u-break { overflow-wrap:anywhere; word-break:break-word; }
+
+/* ===== スマホ横/極小幅向けのレスポンシブ ===== */
+@media (max-width: 640px), (max-height: 420px) and (orientation: landscape) {
+  .mx { padding: 14px 14px; }
+  header .mx, footer .mx { padding: 10px 14px; }
+  .btn { padding: .55rem .8rem; min-height: 40px; font-size: clamp(12px, 3vw, 14px); }
+  .inp, input, textarea, select { padding: 10px 12px !important; }
+  .grid-2 { grid-template-columns: 1fr !important; gap: 12px; }
+  .card { padding: 12px; gap: 12px; }
+  .title { font-size: 1rem; line-height: 1.25; }
+}
+
+/* ===== ヘッダの「マイページ」だけ2行＆縦中央 ===== */
+header a[href*="my.html"],
+header .nav-mypage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding-inline: 12px;
+  text-align: center;
+  font-size: clamp(11px, 2.6vw, 14px);
+  line-height: 1.15;
+  white-space: normal;
+  overflow: hidden;
+  max-height: calc(1.15em * 2);
+  text-wrap: balance;
+}
+
+/* ===== ダークモード環境でも色は固定 ===== */
+@media (prefers-color-scheme: dark) {
+  :root { color-scheme: light; }
+  body, .bg-gray-50, .bg-white { background: var(--bg) !important; }
+  .text-gray-900 { color: var(--text) !important; }
+}
