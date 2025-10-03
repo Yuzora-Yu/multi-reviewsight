@@ -256,3 +256,27 @@ img.round{border-radius:12px; border:1px solid var(--border); background:#0b0f18
 
 /* ---------- Accent ring for yellow actions ---------- */
 .ring-accent:focus-visible{box-shadow:0 0 0 6px var(--ring-weak)}
+
+/* --- Utilities (Tailwind互換の最低限) --- */
+.flex{display:flex}
+.items-center{align-items:center}
+.justify-between{justify-content:space-between}
+.text-right{text-align:right}
+.text-2xl{font-size:1.5rem; line-height:2rem}
+.font-bold{font-weight:800}
+.gap-2{gap:.5rem}
+.gap-3{gap:.75rem}
+.gap-4{gap:1rem}
+.w-44{width:11rem}
+.w-36{width:9rem}
+.rounded{border-radius:12px}
+.p-2{padding:.5rem}
+.p-4{padding:1rem}
+.mt-2{margin-top:.5rem}
+.mt-3{margin-top:.75rem}
+.mt-4{margin-top:1rem}
+.space-y-3 > * + *{margin-top:.75rem}
+.space-y-6 > * + *{margin-top:1.5rem}
+
+/* 画像の角丸/枠（サイト全体統一） */
+img{border-radius:10px}
