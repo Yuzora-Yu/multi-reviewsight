@@ -1,5 +1,5 @@
-// ランキング：views / likes / comments
-const refreshRanking = async () => {
+  // ランキング：views / likes / comments
+  const refreshRanking = async () => {
   const period = document.getElementById('rankPeriod').value;
   const genre  = document.getElementById('rankGenre').value;
   const orderBy= document.getElementById('rankOrder').value; // views|likes|comments
