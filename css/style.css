@@ -244,17 +244,32 @@ select {
   .text-gray-900 { color: var(--text) !important; }
 }
 
-/* ===== ヘッダの「マイページ」だけ2行に収める ===== */
+/* カードの中にフッター行（統計）を入れる */
+.card { flex-wrap: wrap; } /* 下段に回せるように */
+.card .card-stats {
+  width: 100%;
+  margin-top: 8px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: .9rem;
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+  justify-content: flex-end; /* 右寄せ。左寄せにしたければ flex-start */
+}
+
+/* ヘッダの「マイページ」だけ2行に収める*/
 header a[href*="my.html"],
 header a[href*="/my"],
 header .nav-mypage {
-  font-size: clamp(11px, 2.6vw, 14px); /* 狭い横画面で少しだけ縮む */
+  font-size: clamp(11px, 2.6vw, 14px);
   line-height: 1.1;
   display: -webkit-box;
-  -webkit-line-clamp: 2;  /* 2行でトリミング */
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   white-space: normal;
-  max-width: 10.5em;      /* 収まりやすい幅。必要なら調整可 */
+  max-width: 10.5em;
   text-wrap: balance;
 }
