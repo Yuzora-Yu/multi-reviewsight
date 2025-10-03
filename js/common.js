@@ -2,20 +2,21 @@
 window.GENRES = ['ゲーム','漫画','アニメ','音楽','書籍','映画','ドラマ','ソフトウェア','IT関連','DIY関連','ファッション','その他'];
 window.APP_BASE_ABS = 'https://yuzora-yu.github.io/multi-reviewsight/';
 
-// Supabase 接続
+// ====== Supabase 接続 ======
 const SUPABASE_URL = 'https://ovkumzhdxjljukfqchvu.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im92a3VtemhkeGpsanVrZnFjaHZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk0NTMwMjcsImV4cCI6MjA3NTAyOTAyN30.MOzQtbiP9Ac1QA1Tsk9A3bvu5wHUvv3ggUd8l-jSvcw';
 
-// ★ ここがポイント：window.supabase ではなく window.sb を使う
 window.sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// URLヘルパー / SHA-256 / X投稿（既存のままでOK）
-window.appUrl = (p) => new URL(p, window.APP_BASE_ABS).toString();
+// ====== ヘルパー ======
+window.appUrl = (pathAndQuery) => new URL(pathAndQuery, window.APP_BASE_ABS).toString();
+
 window.sha256hex = async (text) => {
   const enc = new TextEncoder().encode(text);
   const buf = await crypto.subtle.digest('SHA-256', enc);
   return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
 };
+
 window.openTweetIntent = (url, text='レビューを投稿しました！', hashtags=['レビュー']) => {
   const u = new URL('https://twitter.com/intent/tweet');
   u.searchParams.set('url', url);
@@ -24,7 +25,28 @@ window.openTweetIntent = (url, text='レビューを投稿しました！', hash
   window.open(u.toString(), '_blank', 'noopener,noreferrer');
 };
 
-// ヘッダー：ログイン/ログアウト表示（ID=loginLink があるページ向け）
+// ====== 一覧カード（必ず定義！） ======
+window.reviewCard = (r) => {
+  // r は reviews の行。created_at, score, title, product_name などを想定
+  const img = r.product_image_url || 'https://placehold.co/128x128?text=No+Image';
+  const url = `review.html?id=${r.id}`; // <base> が効くため相対でOK
+  const date = r.created_at ? new Date(r.created_at).toLocaleDateString() : '';
+  const name = r.author_name || '匿名';
+
+  return `
+    <a class="card" href="${url}">
+      <img src="${img}" alt="">
+      <div class="flex-1">
+        <div class="meta">${r.genre || ''} ${date ? ' | ' + date : ''}</div>
+        <div class="title">${r.title || '(タイトルなし)'}</div>
+        <div class="meta">${r.product_name || ''} / ${name}</div>
+      </div>
+      <div class="text-2xl font-bold">${Number.isFinite(+r.score) ? r.score : '-'}</div>
+    </a>
+  `;
+};
+
+// ====== ヘッダーのログインリンク切替（任意） ======
 document.addEventListener('DOMContentLoaded', async () => {
   try {
     const user = (await window.sb.auth.getUser()).data.user;
@@ -36,7 +58,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         e.preventDefault();
         await window.sb.auth.signOut();
         location.reload();
-      }, { once: true });
+      }, { once:true });
     } else {
       loginLink.textContent = 'ログイン / 登録';
       loginLink.href = 'auth.html';
