@@ -3,25 +3,22 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>だれでもレビュー｜トップ</title>
 
-  <!-- サイト名 -->
-  <title>だれでもレビュー</title>
-
-  <!-- GitHub Pages サブパス -->
   <base href="/multi-reviewsight/">
 
-  <!-- Tailwind (ユーティリティ用。※最後に自作CSSを必ず読み込む) -->
+  <!-- Tailwind（ユーティリティ用途。自作CSSが最後に全体テーマを上書き） -->
   <script src="https://cdn.tailwindcss.com"></script>
 
   <!-- Supabase SDK -->
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <!-- 共通CSS（必ず “最後” に） -->
+  <!-- テーマCSS（必ず最後に読み込む / キャッシュバスター付き） -->
   <link rel="stylesheet" href="css/style.css?v=2025-10-03" />
 
-  <!-- 共通JS（ページ専用スクリプトより先に） -->
-  <script defer src="js/common.js"></script>
-  <!-- ページ専用JSは各ページで続けて defer 読み込み -->
+  <!-- 共通JS → ページ専用JS（defer 順序で実行） -->
+  <script defer src="js/common.js?v=2025-10-03"></script>
+  <script defer src="js/top.js?v=2025-10-03"></script>
 </head>
 
 <body class="bg-gray-50 text-gray-900">
