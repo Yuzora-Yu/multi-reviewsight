@@ -10,35 +10,37 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <!-- 追加ライブラリ（post.js で使用） -->
+  <!-- 追加ライブラリ -->
   <script defer src="https://cdn.jsdelivr.net/npm/dompurify@3.1.7/dist/purify.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
-  <link rel="stylesheet" href="css/style.css?v=2025-10-03" />
+  <link rel="stylesheet" href="css/style.css?v=2025-10-05" />
 
-  <script defer src="js/common.js?v=2025-10-03"></script>
-  <script defer src="js/post.js?v=2025-10-03"></script>
+  <script defer src="js/common.js?v=2025-10-05"></script>
+  <script defer src="js/post.js?v=2025-10-05"></script>
 </head>
 
 <body class="bg-gray-50 text-gray-900">
   <header class="border-b bg-white">
     <div class="mx-auto max-w-3xl px-4 py-4 flex items-center justify-between">
       <a href="./" class="font-bold text-xl">だれでもレビュー</a>
-      <a href="my.html" class="btn-outline">マイページ</a>
+      <nav class="flex gap-3">
+        <a href="post.html" class="btn">レビュー投稿</a>
+        <a href="my.html" class="btn-outline">マイページ</a>
+      </nav>
     </div>
   </header>
 
   <main class="mx-auto max-w-3xl px-4 py-6 space-y-6">
     <section class="bg-white p-4 rounded shadow">
       <h2 class="sec">レビュー投稿</h2>
-      <!-- Amazon検索は後日差し替え。今は手動入力 -->
+
       <button id="openProductPicker" type="button" class="btn-outline mb-3">商品を選ぶ（Amazon検索）</button>
 
       <form id="postForm" class="space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <input class="inp" id="product_name" placeholder="商品名（必須）" required>
           <input class="inp" id="product_author" placeholder="作者・メーカー（任意）">
-          <!-- <input class="inp md:col-span-2" id="product_link_url" placeholder="商品ページURL（任意／Amazon可）"> -->
           <input class="inp md:col-span-2" id="product_link_url" placeholder="商品ページURL（自動取得）" disabled>
           <input class="inp md:col-span-2" id="product_image_url" placeholder="商品画像URL（任意）">
           <input class="inp" id="price_text" placeholder="価格（任意、例：¥1,980）">
@@ -51,15 +53,14 @@
           </div>
           <div>
             <label class="label">ジャンル</label>
-            <select id="genre" class="inp" required>
-              <option>ゲーム</option><option>漫画</option><option>アニメ</option><option>書籍</option>
-              <option>映画</option><option>ドラマ</option><option>IT</option><option>DIY</option>
-              <option>ファッション</option><option>その他</option>
+            <!-- GENRES 自動注入：data-genres を付ける -->
+            <select id="genre" class="inp" required data-genres>
+              <option value="">選択してください</option>
             </select>
           </div>
           <div>
             <label class="label">レビュー者名（任意）</label>
-            <input id="author_name" class="inp" placeholder="未入力＝匿名">
+            <input id="author_name" class="inp" placeholder="ログイン時は自動入力">
           </div>
         </div>
 
@@ -87,16 +88,18 @@
       <!-- 商品選択モーダル -->
       <div id="productPicker" class="fixed inset-0 bg-black/40 hidden items-center justify-center p-4 z-50">
         <div class="bg-white rounded shadow max-w-xl w-full p-4">
-          <h3 class="sec mb-2">Amazonで商品検索 → URLを貼り付け</h3>
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="sec">Amazonで商品検索 → URLを貼り付け</h3>
+            <button id="closePicker" class="btn-ghost">閉じる</button>
+          </div>
           <div class="flex gap-2 mb-3">
             <input id="amazonQuery" class="inp flex-1" placeholder="商品名やASINで検索">
-            <button id="openAmazon" class="btn">Amazonで検索</button>
+            <button id="openAmazon" class="btn" type="button">Amazonで検索</button>
           </div>
           <div class="space-y-2">
             <input id="amazonUrl" class="inp" placeholder="商品ページURLを貼り付け（例：https://www.amazon.co.jp/...）">
             <div class="flex gap-2">
-              <button id="autoFetch" class="btn">自動取得</button>
-              <button id="closePicker" class="btn-outline">閉じる</button>
+              <button id="autoFetch" class="btn" type="button">自動取得</button>
             </div>
             <p class="meta">※ 取得できない場合は手入力のままでOKです。</p>
           </div>
@@ -104,23 +107,29 @@
       </div>
     </section>
 
+    <!-- 最終確認 -->
     <section id="confirmSection" class="hidden bg-white p-4 rounded shadow">
       <h2 class="sec">最終確認</h2>
-      <div id="previewCard" class="border rounded p-4 flex gap-4">
-        <img id="previewImg" class="w-24 h-24 object-cover rounded bg-gray-100" />
+      <div id="previewCard" class="border rounded p-4 flex gap-4 items-start">
+        <div class="mediaBox">
+          <img id="previewImg" alt="">
+        </div>
         <div class="flex-1">
           <div class="text-sm text-gray-500" id="previewGenre"></div>
           <h3 id="previewTitle" class="text-lg font-bold"></h3>
           <div id="previewMeta" class="text-sm text-gray-600"></div>
           <p id="previewBody" class="mt-2 text-sm whitespace-pre-wrap"></p>
         </div>
-        <div class="text-2xl font-bold" id="previewScore"></div>
+        <div class="score-badge" id="previewScore">-</div>
       </div>
       <div class="flex gap-3 mt-4">
-        <button id="confirmPost" class="btn">投稿する</button>
-        <button id="backEdit" class="btn-outline">修正する</button>
+        <button id="confirmPost" class="btn" type="button">投稿する</button>
+        <button id="backEdit" class="btn-outline" type="button">修正する</button>
       </div>
     </section>
   </main>
+
+  <!-- 右下トースト -->
+  <div id="toastWrap" class="toast-wrap"></div>
 </body>
 </html>
