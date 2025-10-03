@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>マイページ</title>
+
+  <base href="/multi-reviewsight/">
+
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="js/common.js"></script>
+  <script defer src="js/my.js"></script>
+</head>
+<body class="bg-gray-50 text-gray-900">
+  <header class="border-b bg-white">
+    <div class="mx-auto max-w-4xl px-4 py-4 flex items-center justify-between">
+      <a href="./" class="font-bold text-xl">みんなのレビュー</a>
+      <a href="auth.html" class="btn-outline">ログイン/ログアウト</a>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-4xl px-4 py-6 space-y-8">
+    <section class="bg-white p-4 rounded shadow">
+      <h2 class="sec">自分のレビュー</h2>
+      <div id="myReviews" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+    </section>
+
+    <section class="bg-white p-4 rounded shadow">
+      <h2 class="sec">いいねしたレビュー</h2>
+      <div id="myLikes" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+    </section>
+  </main>
+</body>
+</html>
