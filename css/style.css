@@ -1,63 +1,63 @@
 /* ------------------------------------------------------------------
-  だれでもレビュー - Global Theme CSS
-  - 今っぽいニュートラル + アクセント、グラス風カード、滑らかなアニメ
-  - Tailwindより後に読み込んで上書き（<head>の順序は維持）
+  だれでもレビュー - Consistent Light Theme CSS (PC / Mobile)
+  改良点：
+  - ライト固定（ダークモードでも色が変わらない）
+  - sRGBの淡色パレットで統一（PC/スマホの色差を低減）
+  - 入力系とレビュー枠の配色を完全統一
+  - スマホ横画面/極小幅でボタン文字がはみ出さないレスポンシブ
 ------------------------------------------------------------------- */
 
-/* ===== CSS 変数（カラーパレット / サイズ） ===== */
-:root{
-  /* 色（light） */
-  --bg:        #0b0c10;          /* ページ背景（濃い炭） */
-  --bg-2:      #111218;
-  --surface:   #141823;          /* カード背景（少し青み） */
-  --surface-2: #1b2030;
-  --text:      #e8ebf2;
-  --muted:     #a9b0c3;
+/* ===== ベース設定 ===== */
+:root {
+  color-scheme: light;
 
-  /* ハイライト（ティール×ライムの最新系） */
-  --acc:       #30e1b9;          /* メインアクセント */
-  --acc-2:     #a8ff60;          /* 差し色 */
-  --danger:    #ff6b6b;
-  --warning:   #ffd166;
+  /* sRGBパレット */
+  --bg:        #ffffff;
+  --bg-2:      #f6f8fb;
+  --surface:   #ffffff;
+  --surface-2: #f3f6fa;
+  --text:      #0f172a; /* Slate-900 */
+  --muted:     #475569; /* Slate-600 */
+  --line:      #e5e7eb; /* Gray-200 */
 
-  /* 枠/影/ガラス */
-  --line:      rgba(255,255,255,.08);
-  --glow:      0 6px 30px rgba(48,225,185,.20);
-  --glass:     rgba(255,255,255,.04);
-  --blur:      10px;
+  /* アクセント */
+  --acc:       #30e1b9;
+  --acc-2:     #a8ff60;
+  --acc-ink:   #06251f;
 
-  /* タイポ */
-  --radius:    14px;
-  --radius-sm: 10px;
-  --radius-lg: 22px;
+  --radius: 16px;
+  --shadow-1: 0 8px 24px rgba(15, 23, 42, .08);
+  --shadow-2: 0 2px 8px rgba(15, 23, 42, .06);
 
-  /* コンテナ幅 */
   --container: 1100px;
 }
 
-/* 自動ダーク（明暗を切り替えたい時は .theme-dark をbodyに付ける） */
-@media (prefers-color-scheme: light){
-  :root{
-    --bg:#f6f7fb; --bg-2:#eef0f6;
-    --surface:#ffffff; --surface-2:#f9fafc;
-    --text:#11131a; --muted:#5b6476;
-    --line:rgba(0,0,0,.08);
-    --glass:rgba(0,0,0,.035);
-    --glow:0 6px 26px rgba(48,225,185,.18);
-  }
+* { -webkit-tap-highlight-color: rgba(0,0,0,0); }
+html { -webkit-text-size-adjust: 100%; }
+:root, body { forced-color-adjust: none; }
+
+html, body {
+  background: var(--bg) !important;
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial,
+               "Hiragino Kaku Gothic ProN", "Noto Sans JP", Meiryo, "Yu Gothic UI";
+  line-height: 1.65;
+  letter-spacing: .02em;
+  margin: 0;
 }
 
-/* ===== Reset-ish（必要最低限） ===== */
-*,*::before,*::after{ box-sizing:border-box }
-html,body{ height:100% }
-html{ scroll-behavior:smooth }
-body{
-  margin:0; background:linear-gradient(180deg,var(--bg),var(--bg-2));
-  color:var(--text); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-  line-height:1.6; letter-spacing:.02em;
-}
+/* ===== タイポ/テキスト色の統一 ===== */
+h1,h2,h3,h4,h5,h6 { color: var(--text); margin: 0 0 .6em; font-weight: 800; }
+p,li,dt,dd { color: var(--text); }
+a { color: #0ea5e9; text-decoration: none; }
+a:hover { text-decoration: underline; }
+.muted, .meta { color: var(--muted) !important; }
 
-/* ===== レイアウトユーティリティ ===== */
+/* Tailwindのbg/textユーティリティを上書き */
+body, .bg-gray-50, .bg-white { background: var(--bg) !important; }
+.text-gray-900 { color: var(--text) !important; }
+
+/* ===== レイアウト ===== */
 .mx{ max-width:var(--container); margin-inline:auto; padding:18px 20px }
 main.mx{ padding-block:28px }
 .space-y-6 > *+*{ margin-top:1.5rem }
@@ -65,162 +65,145 @@ main.mx{ padding-block:28px }
 .grid-2{ display:grid; grid-template-columns:1fr; gap:16px }
 @media (min-width:860px){ .grid-2{ grid-template-columns:1fr 1fr } }
 
-/* ===== ヘッダー/フッター ===== */
+/* ===== ヘッダー / フッター ===== */
 header{
+  position: sticky; top:0; z-index:50;
   backdrop-filter:saturate(140%) blur(8px);
-  background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
+  background: color-mix(in srgb, #ffffff 85%, transparent);
   border-bottom:1px solid var(--line);
-  position:sticky; top:0; z-index:50;
 }
-.brand{
-  font-weight:900; font-size: clamp(18px, 2.2vw, 22px);
-  letter-spacing:.02em; color:var(--text); text-decoration:none;
-}
+.brand{ font-weight:900; font-size: clamp(18px, 2.2vw, 22px); letter-spacing:.02em; color:var(--text); text-decoration:none; }
 footer{ padding:36px 0; color:var(--muted) }
 
-/* ===== カード / セクション ===== */
+/* ===== セクション / カード / レビュー枠 ===== */
 .block{
-  background: linear-gradient(180deg, var(--surface), var(--surface-2));
+  background: var(--surface);
   border:1px solid var(--line);
-  border-radius:var(--radius);
-  padding:20px;
-  box-shadow: 0 1px 0 rgba(255,255,255,.02) inset, 0 10px 30px rgba(0,0,0,.24);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-1);
+  padding: clamp(16px, 2.4vw, 24px);
 }
 .card{
-  display:flex; gap:14px; align-items:flex-start;
-  background:linear-gradient(180deg, var(--surface), var(--surface-2));
+  display:flex; align-items:center; gap:14px;
+  padding:14px; border-radius:14px;
+  background: var(--surface-2);
   border:1px solid var(--line);
-  border-radius:var(--radius);
-  padding:12px; text-decoration:none; color:inherit;
-  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
-  position:relative; overflow:hidden;
+  box-shadow: var(--shadow-2);
 }
-.card::after{
-  content:""; position:absolute; inset:-1px;
-  border-radius:inherit; pointer-events:none;
-  box-shadow: var(--glow);
-  opacity:0; transition:opacity .2s ease;
-}
-.card:hover{
-  transform: translateY(-2px);
-  border-color: rgba(48,225,185,.35);
-}
-.card:hover::after{ opacity:.25 }
-.card img{ width:76px; height:76px; object-fit:cover; border-radius:12px; background:#0a0b10 }
+.card img{ width:76px; height:76px; object-fit:cover; border-radius:12px; background:#eef2f7 }
 .title{ font-weight:800; font-size:1.02rem }
-.meta{ font-size:.84rem; color:var(--muted) }
+.meta{ font-size:.9rem; color:var(--muted) }
 .rank-num{
   width:40px; height:40px; border-radius:12px;
   display:flex; align-items:center; justify-content:center;
-  background:linear-gradient(145deg, rgba(48,225,185,.18), rgba(168,255,96,.18));
-  color:var(--text); font-weight:800; border:1px solid var(--line)
+  background: linear-gradient(145deg, rgba(48,225,185,.18), rgba(168,255,96,.18));
+  color:var(--text); font-weight:800; border:1px solid var(--line);
+}
+
+/* レビュー本文ボックス（色を統一） */
+.review-box,
+.review-card,
+.comment-box {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+/* ===== 入力（テキストボックス/テキストエリア/セレクト） ===== */
+.inp, select.inp, textarea.inp,
+input[type="text"], input[type="email"], input[type="password"], input[type="search"],
+input[type="number"], input[type="url"], input[type="tel"], textarea, select {
+  width: 100%;
+  background: var(--surface) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 12px !important;
+  padding: 12px 14px !important;
+  outline: none;
+  box-shadow: none;
+  appearance: none;
+  -webkit-appearance: none;
+  caret-color: var(--text);
+}
+.inp::placeholder,
+input::placeholder,
+textarea::placeholder { color: color-mix(in srgb, var(--muted) 70%, #ffffff); }
+.inp:focus, input:focus, textarea:focus, select:focus {
+  border-color: var(--acc) !important;
+  box-shadow: 0 0 0 4px rgba(48,225,185,.18) !important;
+}
+/* iOS Safariのオートフィルの黄背景対策 */
+input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 30px var(--surface) inset !important;
+  -webkit-text-fill-color: var(--text) !important;
+  caret-color: var(--text) !important;
+  border: 1px solid var(--line) !important;
+}
+
+/* セレクトの矢印（簡易・どの背景でも見える） */
+select {
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%),
+    linear-gradient(to right, transparent, transparent);
+  background-position: calc(100% - 18px) calc(50% - 3px), calc(100% - 12px) calc(50% - 3px), 0 0;
+  background-size: 6px 6px, 6px 6px, 100% 100%;
+  background-repeat: no-repeat;
+  padding-right: 36px !important;
 }
 
 /* ===== ボタン ===== */
 .btn, .btn-outline, .btn-ghost, .btn-xs{
-  --h:48px;
   display:inline-flex; align-items:center; justify-content:center; gap:.55rem;
-  height:var(--h); padding:0 18px; border-radius:14px; font-weight:800;
+  padding: 0 18px; border-radius:14px; font-weight:800;
   text-decoration:none; cursor:pointer; transition: all .18s ease;
   border:1px solid transparent; user-select:none;
+  line-height: 1.2;
+  max-width: 100%;
 }
 .btn{
-  background:linear-gradient(140deg, var(--acc), var(--acc-2));
-  color:#0a0b10; box-shadow: var(--glow);
+  background: linear-gradient(140deg, var(--acc), var(--acc-2));
+  color: var(--acc-ink);
+  box-shadow: 0 6px 18px rgba(48,225,185,.25);
 }
-.btn:hover{ filter:saturate(110%) brightness(1.05); transform:translateY(-1px) }
-.btn:active{ transform:translateY(0) }
-
 .btn-outline{
-  background:linear-gradient(180deg, var(--surface), var(--surface-2));
-  color:var(--text); border-color:var(--line);
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--line);
 }
-.btn-outline:hover{ border-color:rgba(48,225,185,.45) }
+.btn-ghost{ background: transparent; color: var(--text); }
+.btn:hover{ filter:saturate(110%) brightness(1.04); transform:translateY(-1px) }
+.btn:active{ transform:translateY(0) }
+.btn-outline:hover{ border-color: rgba(48,225,185,.45) }
+.btn-ghost:hover{ background: var(--bg-2) }
 
-.btn-ghost{
-  background:transparent; color:var(--muted)
+/* 文字のはみ出しに強い設定 */
+.btn{
+  /* 高さは自動。行が増えたら伸びる */
+  height: auto; min-height: 44px; /* タップ領域確保 */
+  padding: .7rem 1rem;
+  /* 極小幅で文字サイズを自動で落とす */
+  font-size: clamp(12px, 2.8vw, 15px);
+  /* 折り返し許可＋自然な改行 */
+  white-space: normal;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
 }
-.btn-ghost:hover{ color:var(--text) }
+/* ボタン内のアイコンがある場合の余白最適化 */
+.btn > svg, .btn > img { flex: 0 0 auto; }
 
-.btn-xs{ --h:36px; padding:0 12px; font-weight:700; }
-
-/* ピル / バッジ */
-.pill{
-  display:inline-flex; align-items:center; gap:.4rem;
-  padding:.3rem .6rem; border-radius:999px; font-size:.78rem; font-weight:700;
-  background:linear-gradient(145deg, rgba(48,225,185,.15), rgba(168,255,96,.15));
-  border:1px solid var(--line); color:var(--text)
-}
-
-/* ===== フォーム ===== */
-.inp, textarea.inp, select.inp{
-  width:100%; border-radius:12px; border:1px solid var(--line);
-  background:linear-gradient(180deg, var(--surface), var(--surface-2));
-  color:var(--text); padding:.75rem .9rem; outline:none;
-  transition:border-color .15s ease, box-shadow .15s ease, background .2s ease;
-}
-.inp::placeholder{ color:color-mix(in oklab, var(--muted) 80%, white 20%) }
-.inp:focus{
-  border-color: rgba(48,225,185,.65);
-  box-shadow: 0 0 0 4px rgba(48,225,185,.14);
-}
-label.label{ font-size:.86rem; color:var(--muted); margin:0 0 .35rem .1rem; display:block }
-
-select.inp{ appearance:none; background-image:url("data:image/svg+xml,%3Csvg width='22' height='22' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='%23a9b0c3' d='M6 8l5 6 5-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right .6rem center }
-
-/* ステッパー/数値 */
-input[type="number"].inp{
-  /* 余白合わせ */
+/* 小さめボタン */
+.btn-xs{
+  min-height: 36px;
+  padding: .45rem .7rem;
+  font-weight:700;
+  font-size: clamp(11px, 2.6vw, 13px);
 }
 
-/* ===== リンク ===== */
-a{ color:var(--acc) }
-a:hover{ filter:saturate(120%) }
-
-/* ===== モーダル（簡易） ===== */
-.modal{
-  position:fixed; inset:0; display:none; align-items:center; justify-content:center;
-  background:rgba(0,0,0,.5); z-index:60; padding:20px
-}
-.modal.open{ display:flex }
-.modal .panel{
-  width:min(680px, 96vw); background:linear-gradient(180deg, var(--surface), var(--surface-2));
-  border:1px solid var(--line); border-radius:var(--radius-lg); padding:20px
-}
-
-/* ===== トースト（通知） ===== */
-.toast{
-  position:fixed; right:18px; bottom:18px; z-index:70;
-  background:linear-gradient(180deg, var(--surface), var(--surface-2));
-  border:1px solid var(--line); color:var(--text); padding:.8rem 1rem;
-  border-radius:12px; box-shadow:var(--glow); animation:toast-in .25s ease both
-}
-@keyframes toast-in{ from{ transform:translateY(6px); opacity:0 } to{ transform:translateY(0); opacity:1 } }
-
-/* ===== 表（ランキング用） ===== */
-ol#rankList{ list-style:none; padding:0; margin:0 }
-ol#rankList li + li{ margin-top:12px }
-
-/* ===== 画像 ===== */
-img{ border-radius:12px }
-
-/* ===== 小要素 ===== */
-hr.sep{
-  height:1px; border:0; margin:16px 0;
-  background:linear-gradient(90deg, transparent, var(--line), transparent)
-}
-.badge{
-  font-size:.75rem; padding:.2rem .5rem; border-radius:999px;
-  background:var(--glass); border:1px solid var(--line)
-}
-
-/* ===== レスポンシブ余白調整 ===== */
-@media (max-width:720px){
-  .mx{ padding:14px 14px }
-  .card img{ width:64px; height:64px }
-}
-
-/* ===== 便利ユーティリティ（旧コード互換） ===== */
+/* ===== 汎用ユーティリティ ===== */
 .hidden{ display:none !important }
 .text-sm{ font-size:.9rem }
 .text-right{ text-align:right }
@@ -228,7 +211,35 @@ hr.sep{
 .w-44{ width:11rem } .w-36{ width:9rem }
 .rounded{ border-radius: var(--radius) }
 
-/* 背景だけ白に固定（Tailwindの bg-gray-50 等より優先） */
-html, body {
-  background: #ffffff !important;
+/* 長い商品名・レビュータイトルがはみ出す場合に付与して使う */
+.u-break { overflow-wrap:anywhere; word-break:break-word; }
+
+/* ===== スマホ横/極小幅向けのレスポンシブ調整 ===== */
+/* 横幅が狭い、または横向きで高さが低い時に「詰める」 */
+@media (max-width: 640px), (max-height: 420px) and (orientation: landscape) {
+  .mx { padding: 14px 14px; }
+  header .mx, footer .mx { padding: 10px 14px; }
+
+  /* ボタンはよりコンパクトに */
+  .btn { padding: .55rem .8rem; min-height: 40px; font-size: clamp(12px, 3vw, 14px); }
+
+  /* 入力系の上下を詰める（はみ出し軽減） */
+  .inp, input, textarea, select { padding: 10px 12px !important; }
+
+  /* グリッドを1列中心に */
+  .grid-2 { grid-template-columns: 1fr !important; gap: 12px; }
+
+  /* カードの詰め */
+  .card { padding: 12px; gap: 12px; }
+  .card img { width:64px; height:64px; }
+
+  /* タイトルは自動で折り返し */
+  .title { font-size: 1rem; line-height: 1.25; }
+}
+
+/* ===== ダークモード環境でも色は固定 ===== */
+@media (prefers-color-scheme: dark) {
+  :root { color-scheme: light; }
+  body, .bg-gray-50, .bg-white { background: var(--bg) !important; }
+  .text-gray-900 { color: var(--text) !important; }
 }
