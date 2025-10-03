@@ -1,4 +1,4 @@
-// js/top.js — 新着4件 / 検索 / ランキング（reviewsテーブルのみで集計）
+// js/top.js — 新着4件 / 検索は既存維持 / ランキングはクライアント集計で堅牢化
 
 document.addEventListener('DOMContentLoaded', () => {
   init().catch(err => {
@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
 async function init() {
   const sb = window.sb;
 
-  /* ===== 新着4件 ===== */
+  /* ===== 新着4件（元の仕様のまま） ===== */
   await renderLatest4(sb);
 
   /* ===== ランキング ===== */
@@ -23,48 +23,68 @@ async function init() {
   async function refreshRanking() {
     rankList.innerHTML = `<li class="meta">更新中...</li>`;
 
-    // 期間フィルタを created_at で絞り込む
-    const period = (rankPeriod?.value || '').trim();
+    // フィルタ
+    const period = (rankPeriod?.value || '').trim(); // '', '7d', '30d', '365d'
     const genre  = (rankGenre?.value || '').trim();
-    const order  = (rankOrder?.value || 'views').trim(); // views/likes/comments のいずれか
+    const order  = (rankOrder?.value || 'views').trim(); // 'views' | 'likes' | 'comments'
 
-    // 期間の起点を作る
+    // 期間の fromISO
     let fromISO = null;
-    if (period === '7d' || period === '30d' || period === '365d') {
-      const now = new Date();
+    if (period) {
       const days = period === '7d' ? 7 : period === '30d' ? 30 : 365;
-      const from = new Date(now.getTime() - days*24*60*60*1000);
-      fromISO = from.toISOString();
+      fromISO = new Date(Date.now() - days*24*60*60*1000).toISOString();
     }
 
-    // 基本クエリ
+    // 1) reviews から候補（最大100）
     let q = sb.from('reviews').select('*');
-
     if (fromISO) q = q.gte('created_at', fromISO);
     if (genre)   q = q.eq('genre', genre);
 
-    // 並び順（views/likes/comments いずれも reviews テーブルに列がある想定）
-    // なければ 0 として後でソート。まずは created_at 降順で取る
-    let { data: rows, error } = await q.order('created_at', { ascending: false }).limit(100);
-    if (error) {
-      console.error(error);
-      rankList.innerHTML = `<li class="meta">読み込みに失敗しました</li>`;
+    let rows = [];
+    try {
+      const { data, error } = await q.order('created_at', { ascending:false }).limit(100);
+      if (error) throw error;
+      rows = data || [];
+    } catch (e) {
+      console.error('reviews fetch failed', e);
+      rankList.innerHTML = `<li class="meta">レビュー取得に失敗しました</li>`;
+      return;
+    }
+    if (!rows.length) {
+      rankList.innerHTML = `<li class="meta">条件に一致するレビューがありません</li>`;
       return;
     }
 
-    // 列が無い環境でも落ちないようにクライアント側で安全ソート
-    const key = (r) => {
-      if (order === 'likes')    return r.likes    ?? 0;
-      if (order === 'comments') return r.comments ?? 0;
-      return r.views ?? 0;
-    };
-    rows.sort((a, b) => (key(b) - key(a)));
+    // 2) コメント・いいね・閲覧数を IN で集計してマージ
+    const ids = rows.map(r => r.id);
 
-    const items = rows.slice(0, 20).map((r, i) => {
-      const views = r.views ?? 0;
-      const likes = r.likes ?? 0;
-      const comments = r.comments ?? 0;
+    // 2-1) comments: {review_id, count}
+    const commentsMap = await safeCountBy(sb, 'comments', 'review_id', ids);
 
+    // 2-2) likes: {review_id, count}
+    const likesMap = await safeCountBy(sb, 'likes', 'review_id', ids);
+
+    // 2-3) views: まず review_views があれば count(*), 無ければ reviews.views、どちらも無ければ 0
+    let viewsMap = {};
+    try {
+      viewsMap = await safeCountBy(sb, 'review_views', 'review_id', ids);
+    } catch { viewsMap = {}; }
+
+    // マージ
+    const enriched = rows.map(r => ({
+      ...r,
+      _comments: commentsMap[r.id] ?? (r.comments ?? 0),
+      _likes:    likesMap[r.id]    ?? (r.likes ?? 0),
+      _views:    viewsMap[r.id]    ?? (r.views ?? 0),
+    }));
+
+    // 並べ替え
+    const sortKey = order === 'likes' ? '_likes' : order === 'comments' ? '_comments' : '_views';
+    enriched.sort((a,b) => (b[sortKey] - a[sortKey]));
+
+    // 3) 描画（20件まで）
+    rankList.innerHTML = enriched.slice(0,20).map((r,i) => {
+      const views = r._views, likes = r._likes, comments = r._comments;
       return `
         <li>
           <div class="flex items-center gap-3">
@@ -78,8 +98,25 @@ async function init() {
           </div>
         </li>`;
     }).join('');
+  }
 
-    rankList.innerHTML = items;
+  // IN で { key -> count } を作る汎用関数（列名やテーブルが無ければ 0 扱い）
+  async function safeCountBy(sb, table, key, ids) {
+    try {
+      // PostgREST: group by は RPC が安全だが、ここではテーブルが小規模想定で全件 in 取得→JS集計
+      const { data, error } = await sb.from(table).select(key).in(key, ids).limit(10000);
+      if (error) throw error;
+      const map = {};
+      for (const row of (data || [])) {
+        const k = row[key];
+        map[k] = (map[k] || 0) + 1;
+      }
+      return map;
+    } catch (e) {
+      // テーブルが無い or RLS で弾かれても 0 扱いにする
+      console.warn(`countBy ${table} failed`, e?.message || e);
+      return {};
+    }
   }
 
   function fallbackCard(r, { views, likes, comments }) {
@@ -87,9 +124,7 @@ async function init() {
     const url = `review.html?id=${r.id}`;
     return `
       <a class="card" href="${url}">
-        <div class="mediaBox">
-          <img src="${img}" alt="">
-        </div>
+        <div class="mediaBox"><img src="${img}" alt=""></div>
         <div class="flex-1">
           <div class="meta">${r.genre}｜${new Date(r.created_at).toLocaleDateString()}</div>
           <div class="title u-break">${r.title}</div>
@@ -120,7 +155,6 @@ async function renderLatest4(sb) {
       .order('created_at', { ascending: false })
       .limit(4);
     if (error) throw error;
-
     latestEl.innerHTML = data.map(r => window.reviewCard(r)).join('');
   } catch (e) {
     console.error(e);
