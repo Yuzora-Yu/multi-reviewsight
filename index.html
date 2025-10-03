@@ -5,12 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>だれでもレビュー</title>
 
-  <!-- GitHub Pages のサブパス基準 -->
   <base href="/multi-reviewsight/">
 
   <link rel="stylesheet" href="css/style.css" />
   <script src="https://cdn.tailwindcss.com"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- ★ supabase-js は最初に読む（defer なし） -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- 以降は defer でOK -->
   <script defer src="js/common.js"></script>
   <script defer src="js/top.js"></script>
 </head>
