@@ -1,27 +1,88 @@
-<!-- review.html の評価・コメント枠をこの形に（置換でもOK） -->
-<section class="block">
-  <div class="flex items-center justify-between">
-    <h2 class="sec">評価・コメント</h2>
-    <button id="likeBtn" class="btn-outline text-sm">いいね</button>
-  </div>
-  <div id="likeCount" class="meta mt-2"></div>
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>レビュー詳細 - だれでもレビュー</title>
 
-  <!-- コメント一覧 -->
-  <div id="comments" class="mt-4 space-y-3"></div>
+  <!-- GitHub Pages（サブパス） -->
+  <base href="/multi-reviewsight/">
 
-  <!-- ページング -->
-  <div class="flex items-center gap-2 mt-2">
-    <button id="prevPage" class="btn-outline btn-xs">前の20件</button>
-    <button id="nextPage" class="btn-outline btn-xs">次の20件</button>
-    <span id="pageInfo" class="meta"></span>
-  </div>
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/style.css" />
 
-  <!-- コメント投稿（表示名は固定で入力不可） -->
-  <form id="commentForm" class="mt-4 border-t pt-4 space-y-2">
-    <div class="meta" id="fixedName">表示名: ・・・</div>
-    <textarea id="commentBody" rows="3" class="inp" placeholder="コメントを書く（ログイン必須）" required></textarea>
-    <div class="flex gap-2">
-      <button class="btn">コメント投稿</button>
+  <!-- Tailwind（CDN） -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Supabase SDK（必ず先に） -->
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- サニタイズ -->
+  <script defer src="https://cdn.jsdelivr.net/npm/dompurify@3.1.7/dist/purify.min.js"></script>
+
+  <!-- 共通ユーティリティ -->
+  <script defer src="js/common.js"></script>
+
+  <!-- このページ専用 -->
+  <script defer src="js/review.js"></script>
+</head>
+<body class="bg-gray-50 text-gray-900">
+  <header class="border-b bg-white">
+    <div class="mx-auto max-w-5xl px-4 py-4 flex items-center justify-between">
+      <a href="./" class="font-bold text-xl">だれでもレビュー</a>
+      <nav class="flex gap-3">
+        <a href="post.html" class="btn">レビュー投稿</a>
+        <a href="my.html" class="btn-outline">マイページ</a>
+        <a id="loginLink" href="auth.html" class="text-sm underline">ログイン / 登録</a>
+      </nav>
     </div>
-  </form>
-</section>
+  </header>
+
+  <main class="mx-auto max-w-5xl px-4 py-6 space-y-8">
+
+    <!-- 上：レビュー詳細 -->
+    <section id="detailSection" class="bg-white p-5 rounded shadow">
+      <!-- jsで描画 -->
+    </section>
+
+    <!-- 中：評価（いいね）・コメント投稿 -->
+    <section class="bg-white p-5 rounded shadow">
+      <div class="flex items-center justify-between flex-wrap gap-3">
+        <h2 class="sec">評価・コメント</h2>
+        <div class="flex items-center gap-3">
+          <button id="likeBtn" class="btn-outline">♡ いいね</button>
+          <span id="likeCount" class="text-sm text-gray-600">いいね：0</span>
+        </div>
+      </div>
+
+      <div id="commentBox" class="mt-4">
+        <div class="text-sm text-gray-600 mb-1">
+          表示名：<span id="commentDisplayName" class="font-semibold">（未ログイン）</span>
+        </div>
+        <form id="commentForm" class="space-y-3">
+          <textarea id="commentBody" rows="4" class="inp" placeholder="コメントを書く（ログインが必要です）" required></textarea>
+          <div class="flex gap-3">
+            <button class="btn" type="submit">コメントを投稿</button>
+            <a id="toAuth" href="auth.html" class="btn-outline">ログイン / 登録</a>
+          </div>
+        </form>
+        <p id="commentNotice" class="meta mt-2 hidden">ログイン後にコメントできます。</p>
+      </div>
+    </section>
+
+    <!-- 下：コメント履歴（掲示板風＋ページング） -->
+    <section class="bg-white p-5 rounded shadow">
+      <div class="flex items-center justify-between">
+        <h2 class="sec">コメント履歴</h2>
+        <div class="flex items-center gap-2 text-sm">
+          <button id="prevPage" class="btn-outline">前へ</button>
+          <span id="pageInfo" class="meta">1 / 1</span>
+          <button id="nextPage" class="btn-outline">次へ</button>
+        </div>
+      </div>
+      <div id="commentList" class="mt-4 space-y-3"></div>
+    </section>
+
+  </main>
+</body>
+</html>
