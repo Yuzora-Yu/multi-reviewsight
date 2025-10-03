@@ -242,20 +242,34 @@ function setupComments(sb, reviewId) {
   return { reloadFromTop };
 }
 
-/* ===== 表示回数 ===== */
+/* ===== 表示回数（user_id 列が無くても動くフォールバック版） ===== */
 async function recordView(sb, reviewId) {
   try {
     const { data: { user } } = await sb.auth.getUser();
-    // 必須列が review_id と user_id のみ、created_at はデフォルトという前提
-    await sb.from('review_views').insert({
-      review_id: reviewId,
-      user_id: user?.id ?? null
-    });
+    const base = { review_id: reviewId };
+
+    // 1回目: user_id を付けてみる
+    let { error, status } = await sb.from('review_views').insert({ ...base, user_id: user?.id ?? null });
+    if (!error) return;
+
+    // user_id 列が無い／スキーマ未反映など → フォールバック
+    const msg = (error && (error.message || JSON.stringify(error))) || '';
+    const shouldRetryWithoutUser =
+      String(status) === '400' || String(status) === '404' || /user_id/i.test(msg) || /schema/i.test(msg) || /PGRST204/.test(msg);
+
+    if (shouldRetryWithoutUser) {
+      const res2 = await sb.from('review_views').insert(base);
+      if (res2.error) {
+        console.warn('recordView retry failed:', res2.error);
+      }
+    } else {
+      console.warn('recordView failed:', error);
+    }
   } catch (e) {
-    // RLSやスキーマ差異で失敗してもアプリは落とさない
-    console.warn('recordView failed:', e?.message || e);
+    console.warn('recordView unexpected:', e);
   }
 }
+
 
 /* ===== 共通小物 ===== */
 function byId(id){ return document.getElementById(id); }
