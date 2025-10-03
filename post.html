@@ -27,6 +27,8 @@
     <section class="bg-white p-4 rounded shadow">
       <h2 class="sec">レビュー投稿</h2>
       <!-- Amazon検索は後日差し替え。今は手動入力 -->
+      <button id="openProductPicker" type="button" class="btn-outline mb-3">商品を選ぶ（Amazon検索）</button>
+
       <form id="postForm" class="space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <input class="inp" id="product_name" placeholder="商品名（必須）" required>
@@ -75,6 +77,25 @@
           <a href="./" class="btn-outline">トップへ戻る</a>
         </div>
       </form>
+
+      <!-- 商品選択モーダル -->
+      <div id="productPicker" class="fixed inset-0 bg-black/40 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded shadow max-w-xl w-full p-4">
+          <h3 class="sec mb-2">Amazonで商品検索 → URLを貼り付け</h3>
+          <div class="flex gap-2 mb-3">
+            <input id="amazonQuery" class="inp flex-1" placeholder="商品名やASINで検索">
+            <button id="openAmazon" class="btn">Amazonで検索</button>
+          </div>
+          <div class="space-y-2">
+            <input id="amazonUrl" class="inp" placeholder="商品ページURLを貼り付け（例：https://www.amazon.co.jp/...）">
+            <div class="flex gap-2">
+              <button id="autoFetch" class="btn">自動取得</button>
+              <button id="closePicker" class="btn-outline">閉じる</button>
+            </div>
+            <p class="meta">※ 取得できない場合は手入力のままでOKです。</p>
+          </div>
+        </div>
+      </div>
     </section>
 
     <section id="confirmSection" class="hidden bg-white p-4 rounded shadow">
