@@ -3,37 +3,76 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>だれでもレビュー｜マイページ</title>
+  <title>マイページ - だれでもレビュー</title>
 
+  <!-- GitHub Pages（サブパス） -->
   <base href="/multi-reviewsight/">
 
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- Tailwind（CDN） -->
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Supabase SDK（先に読み込み） -->
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <link rel="stylesheet" href="css/style.css?v=2025-10-03" />
+  <!-- 共通ユーティリティ -->
+  <script defer src="js/common.js"></script>
 
-  <script defer src="js/common.js?v=2025-10-03"></script>
-  <script defer src="js/my.js?v=2025-10-03"></script>
+  <!-- このページ専用 -->
+  <script defer src="js/my.js"></script>
 </head>
-
 <body class="bg-gray-50 text-gray-900">
   <header class="border-b bg-white">
-    <div class="mx-auto max-w-4xl px-4 py-4 flex items-center justify-between">
+    <div class="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
       <a href="./" class="font-bold text-xl">だれでもレビュー</a>
-      <a href="auth.html" class="btn-outline">ログイン/ログアウト</a>
+      <nav class="flex gap-3">
+        <a href="post.html" class="btn">レビュー投稿</a>
+        <a id="loginLink" href="auth.html" class="text-sm underline">ログイン / 登録</a>
+      </nav>
     </div>
   </header>
 
-  <main class="mx-auto max-w-4xl px-4 py-6 space-y-8">
-    <section class="bg-white p-4 rounded shadow">
-      <h2 class="sec">自分のレビュー</h2>
-      <div id="myReviews" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+  <main class="mx-auto max-w-6xl px-4 py-8 space-y-8">
+
+    <!-- アカウント情報 -->
+    <section class="bg-white p-5 rounded shadow">
+      <h2 class="sec mb-3">アカウント情報</h2>
+      <div id="accountBox" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="info-tile"><div class="label">レビュアーネーム</div><div id="accName" class="value">—</div></div>
+        <div class="info-tile"><div class="label">メールアドレス</div><div id="accEmail" class="value">—</div></div>
+        <div class="info-tile"><div class="label">会員登録日</div><div id="accJoined" class="value">—</div></div>
+      </div>
+      <div class="mt-4">
+        <a href="auth.html" class="btn-outline">アカウント設定（ネーム変更／ログアウト）</a>
+      </div>
     </section>
 
-    <section class="bg-white p-4 rounded shadow">
-      <h2 class="sec">いいねしたレビュー</h2>
-      <div id="myLikes" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+    <!-- 自分のレビュー -->
+    <section class="bg-white p-5 rounded shadow">
+      <div class="flex items-center justify-between">
+        <h2 class="sec">自分のレビュー</h2>
+      </div>
+      <div id="myReviews" class="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
     </section>
+
+    <!-- いいねしたレビュー -->
+    <section class="bg-white p-5 rounded shadow">
+      <div class="flex items-center justify-between">
+        <h2 class="sec">いいねしたレビュー</h2>
+      </div>
+      <div id="myLikes" class="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </section>
+
+    <!-- コメントしたレビュー -->
+    <section class="bg-white p-5 rounded shadow">
+      <div class="flex items-center justify-between">
+        <h2 class="sec">コメントしたレビュー</h2>
+      </div>
+      <div id="myCommented" class="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </section>
+
   </main>
 </body>
 </html>
