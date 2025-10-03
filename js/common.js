@@ -175,3 +175,28 @@ window.populateGenreSelects = () => {
 document.addEventListener("DOMContentLoaded", () => {
   try { window.populateGenreSelects(); } catch (e) { console.warn(e); }
 });
+// ===== modal helpers (中央表示) =====
+window.openModal = (sel) => {
+  const el = typeof sel === "string" ? document.querySelector(sel) : sel;
+  if (!el) return;
+  el.classList.add("is-open");
+  el.classList.remove("hidden");
+  el.setAttribute("aria-hidden", "false");
+};
+window.closeModal = (sel) => {
+  const el = typeof sel === "string" ? document.querySelector(sel) : sel;
+  if (!el) return;
+  el.classList.remove("is-open");
+  el.classList.add("hidden");
+  el.setAttribute("aria-hidden", "true");
+};
+
+// クリックで閉じる（overlay / [data-close]）
+document.addEventListener("click", (e) => {
+  const overlay = e.target.closest(".modal .overlay");
+  const closer  = e.target.closest("[data-close]");
+  if (!overlay && !closer) return;
+
+  const modal = e.target.closest(".modal") || document.querySelector(closer?.getAttribute("data-close"));
+  if (modal) window.closeModal(modal);
+});
