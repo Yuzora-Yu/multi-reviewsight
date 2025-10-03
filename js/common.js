@@ -45,13 +45,23 @@ window.toast = (msg) => {
   setTimeout(() => el.remove(), 2600);
 };
 
-// プロフィール名（profiles.display_name があれば優先）
+// --- Display Name の取得（共通で使う） ---
 window.getDisplayName = async () => {
   const { data: { user } } = await window.sb.auth.getUser();
   if (!user) return null;
-  const { data } = await window.sb.from('profiles')
-    .select('display_name').eq('user_id', user.id).maybeSingle();
-  return data?.display_name || (user.email ? user.email.split('@')[0] : '匿名');
+
+  // profiles から取得（なければメールIDを暫定返し）
+  const { data, error } = await window.sb
+    .from('profiles')
+    .select('display_name')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (error) {
+    console.warn('profiles fetch error:', error.message);
+  }
+  const emailName = user.email ? user.email.split('@')[0] : 'ユーザー';
+  return data?.display_name || emailName;
 };
 
 // 一覧カード（トップ/マイページ用）
