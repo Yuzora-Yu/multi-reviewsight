@@ -67,26 +67,23 @@
 
   <footer class="py-10 text-center text-sm text-gray-500">© 2025 だれでもレビュー</footer>
 
-<!-- ログイン/登録モーダル：中央表示 -->
+<!-- レビュー画面用 簡易ログイン/登録モーダル -->
 <div id="modalAuth" class="modal hidden" aria-hidden="true">
   <div class="overlay"></div>
   <div class="panel">
     <h3 class="title">ログイン / 新規登録</h3>
-    <p class="meta mb-3">メールアドレスでログイン/登録できます。</p>
-
-    <form id="modalAuthForm" class="space-y-3">
-      <input id="authEmail" type="email" class="inp" placeholder="メールアドレス" required>
+    <p class="meta">「いいね」やコメント投稿にはログインが必要です。</p>
+    <form class="space-y-3">
+      <input id="authEmail" type="email" class="inp" placeholder="メールアドレス">
       <div class="flex gap-2">
         <button type="button" id="btnLogin" class="btn flex-1">ログインリンク送信</button>
-        <button type="button" id="btnRegister" class="btn-outline flex-1">新規登録リンク</button>
+        <button type="button" id="btnGoRegister" class="btn-outline flex-1">新規登録へ</button>
       </div>
     </form>
-
-    <div class="text-right mt-4">
-      <button class="btn-ghost" data-close="#modalAuth">閉じる</button>
-    </div>
+    <div class="text-right mt-3"><button class="btn-ghost" data-close="#modalAuth">閉じる</button></div>
   </div>
 </div>
+
 
 </body>
 </html>
