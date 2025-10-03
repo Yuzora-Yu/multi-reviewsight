@@ -1,9 +1,6 @@
 // js/post.js — GENRES自動注入 / レビュアーネーム自動入力 / Amazon自動転記（Edge Function）
 //               入力→確認→投稿（確実動作）
 
-// ← ここにあなたの Edge Function URL を入れてください（meta-from-url を deploy 後のURL）
-const META_FN_URL = 'https://<your-project-id>.supabase.co/functions/v1/meta-from-url';
-
 document.addEventListener('DOMContentLoaded', () => {
   main().catch(e => {
     console.error(e);
@@ -12,23 +9,16 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function main() {
-  // Supabase 初期化確認
   if (!window.sb) {
     console.error('[post] Supabase client (window.sb) が未初期化です。common.js と鍵設定を確認してください。');
     throw new Error('Supabase 未初期化');
   }
   const sb = window.sb;
 
-  // 1) GENRES を <select data-genres> に反映
   try { window.populateGenreSelects?.(); } catch {}
-
-  // 2) レビュアーネームをページ表示直後に自動入力
   await presetAuthorName(sb);
+  setupProductPicker(sb);
 
-  // 3) 商品選択モーダル（Amazon転記つき）
-  setupProductPicker();
-
-  // 4) 入力 → 確認
   document.getElementById('postForm').addEventListener('submit', (e) => {
     e.preventDefault();
     const err = validateInputs();
@@ -36,23 +26,17 @@ async function main() {
     showConfirm();
   });
 
-  // 5) 確認 → 編集に戻る
   document.getElementById('backEdit').addEventListener('click', () => {
     document.getElementById('confirmSection').classList.add('hidden');
     document.getElementById('postForm').classList.remove('hidden');
   });
 
-  // 6) 投稿実行
   document.getElementById('confirmPost').addEventListener('click', async () => {
     const btn = document.getElementById('confirmPost');
     toggleBtn(btn, true, '投稿中…');
     try {
       const payload = collectPayload();
-
-      // サニタイズ（本文）
       if (window.DOMPurify) payload.body = DOMPurify.sanitize(payload.body);
-
-      // スキーマに合わせて null を適切に
       if (!payload.edit_password) delete payload.edit_password;
 
       const { data, error } = await sb.from('reviews').insert(payload).select('id').single();
@@ -93,7 +77,7 @@ async function presetAuthorName(sb) {
   }
 }
 
-function setupProductPicker() {
+function setupProductPicker(sb) {
   const picker = document.getElementById('productPicker');
   const openBtn = document.getElementById('openProductPicker');
   const closeBtn = document.getElementById('closePicker');
@@ -109,7 +93,7 @@ function setupProductPicker() {
     window.open(`https://www.amazon.co.jp/s?k=${q}`, '_blank', 'noopener');
   });
 
-  // URL からの自動取得（Edge Function 経由）
+  // URL からの自動取得（Edge Function 経由 / apikey 自動付与）
   autoFetch.addEventListener('click', async () => {
     const url = document.getElementById('amazonUrl').value.trim();
     if (!url) return alert('Amazonの商品URLを貼り付けてください');
@@ -118,21 +102,14 @@ function setupProductPicker() {
     toggleBtn(btn, true, '取得中…');
 
     try {
-      // Edge Function 呼び出し
-      const r = await fetch(META_FN_URL, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ url })
-      });
-      const data = await r.json().catch(() => ({}));
-
-      if (!r.ok || !data?.ok) {
-        console.warn('meta-from-url failed:', data);
+      // 関数名はあなたの関数名に合わせて（例：meta-from-url / fetch-amazon など）
+      const { data, error } = await sb.functions.invoke('meta-from-url', { body: { url } });
+      if (error || !data?.ok) {
+        console.warn('meta-from-url failed:', error || data);
         alert('取得に失敗しました。URLが正しいか確認してください。');
         return;
       }
 
-      // 反映（互換キーも許容）
       if (data.product_name || data.name) {
         document.getElementById('product_name').value = data.product_name || data.name;
       }
@@ -145,8 +122,8 @@ function setupProductPicker() {
       if (data.product_image_url || data.image) {
         document.getElementById('product_image_url').value = data.product_image_url || data.image;
       }
-
       document.getElementById('product_link_url').value = data.product_url || url;
+
       window.toast?.('Amazonから転記しました');
       picker.classList.add('hidden');
     } catch (e) {
@@ -171,7 +148,6 @@ function validateInputs() {
 function showConfirm() {
   const data = collectPayload();
 
-  // プレビュー反映
   document.getElementById('previewImg').src = data.product_image_url || 'https://placehold.co/128x128?text=No+Image';
   document.getElementById('previewGenre').textContent = data.genre || '';
   document.getElementById('previewTitle').textContent = data.title || '';
@@ -180,15 +156,12 @@ function showConfirm() {
   document.getElementById('previewBody').textContent = data.body || '';
   document.getElementById('previewScore').textContent = String(data.score ?? '-');
 
-  // 画面切替
   document.getElementById('postForm').classList.add('hidden');
   document.getElementById('confirmSection').classList.remove('hidden');
 }
 
 function collectPayload() {
   const v = (id) => (document.getElementById(id)?.value ?? '').trim();
-
-  // disabled の値はそのまま .value で参照可
   return {
     product_name: v('product_name'),
     product_author: v('product_author'),
