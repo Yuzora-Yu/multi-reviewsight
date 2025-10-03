@@ -64,7 +64,7 @@ window.getDisplayName = async () => {
   return data?.display_name || emailName;
 };
 
-// 一覧カード（トップ/マイページ用）
+/* ==== 一覧カード（画像に data-fit="auto" を付ける版・全文） ==== */
 window.reviewCard = (r) => {
   const img = r.product_image_url || 'https://placehold.co/128x128?text=No+Image';
   const url = `review.html?id=${r.id}`;
@@ -75,14 +75,14 @@ window.reviewCard = (r) => {
     </div>
     <div class="flex-1">
       <div class="meta">${r.genre}｜${new Date(r.created_at).toLocaleDateString()}</div>
-      <div class="title">${r.title}</div>
-      <div class="meta">${r.product_name} / ${r.author_name || '匿名'}</div>
+      <div class="title u-break">${r.title}</div>
+      <div class="meta u-break">${r.product_name} / ${r.author_name || '匿名'}</div>
     </div>
     <div class="text-2xl font-bold">${r.score}</div>
   </a>`;
 };
 
-// カード内に表示数/いいね/コメントを含めたバージョン
+/* ==== カード内に統計（表示数/いいね/コメント）を含める版・全文 ==== */
 window.reviewCardWithStats = (r, { views = 0, likes = 0, comments = 0 } = {}) => {
   const img = r.product_image_url || 'https://placehold.co/128x128?text=No+Image';
   const url = `review.html?id=${r.id}`;
@@ -93,10 +93,8 @@ window.reviewCardWithStats = (r, { views = 0, likes = 0, comments = 0 } = {}) =>
     </div>
     <div class="flex-1">
       <div class="meta">${r.genre}｜${new Date(r.created_at).toLocaleDateString()}</div>
-      <div class="title">${r.title}</div>
-      <div class="meta">${r.product_name} / ${r.author_name || '匿名'}</div>
-
-      <!-- 統計行（カード内フッター） -->
+      <div class="title u-break">${r.title}</div>
+      <div class="meta u-break">${r.product_name} / ${r.author_name || '匿名'}</div>
       <div class="card-stats">
         <span>表示数: ${views ?? 0}</span>
         <span>いいね: ${likes ?? 0}</span>
@@ -105,6 +103,28 @@ window.reviewCardWithStats = (r, { views = 0, likes = 0, comments = 0 } = {}) =>
     </div>
     <div class="text-2xl font-bold">${r.score}</div>
   </a>`;
+};
+
+/* ==== 画像の縦横比で表示方式を自動切替（fit-w / fit-h を付与）・全文 ==== */
+window.fitThumbs = (root = document) => {
+  const imgs = [...root.querySelectorAll('img[data-fit="auto"]')];
+  imgs.forEach(img => {
+    const apply = () => {
+      const w = img.naturalWidth, h = img.naturalHeight;
+      if (!w || !h) return;
+      img.classList.remove('fit-w', 'fit-h');
+      if (w > h) img.classList.add('fit-w');      // 横長→幅優先
+      else if (h > w) img.classList.add('fit-h'); // 縦長→高さ優先
+      // 正方形は cover のまま
+    };
+    if (img.complete) apply();
+    else img.addEventListener('load', apply, { once: true });
+
+    img.addEventListener('error', () => {
+      img.removeAttribute('src');
+      img.src = 'https://placehold.co/128x128?text=No+Image';
+    }, { once: true });
+  });
 };
 
 // --- ヘッダー（ログイン/ログアウト切替 + 管理リンク） ---
@@ -156,27 +176,3 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.error(e);
   }
 });
-
-// ==== 画像の縦横比で表示方式を自動切り替え ====
-window.fitThumbs = (root = document) => {
-  const imgs = [...root.querySelectorAll('img[data-fit="auto"]')];
-  imgs.forEach(img => {
-    const apply = () => {
-      const w = img.naturalWidth, h = img.naturalHeight;
-      if (!w || !h) return;
-      img.classList.remove('fit-w', 'fit-h');
-      if (w > h) img.classList.add('fit-w');      // 横長→幅優先
-      else if (h > w) img.classList.add('fit-h'); // 縦長→高さ優先
-      // 正方形はデフォルト（cover）のまま
-    };
-    if (img.complete) apply();
-    else img.addEventListener('load', apply, { once: true });
-
-    // 画像エラー時のフォールバック
-    img.addEventListener('error', () => {
-      img.removeAttribute('src');
-      img.src = 'https://placehold.co/128x128?text=No+Image';
-    }, { once: true });
-  });
-};
-
