@@ -10,8 +10,12 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function init() {
+  // Supabase 初期化チェック
+  if (!window.sb) throw new Error('Supabase client が未初期化です（common.js と鍵設定を確認）');
   const sb = window.sb;
+
   const reviewId = new URLSearchParams(location.search).get('id');
+  if (!reviewId) throw new Error('id が指定されていません');
 
   // ページ識別（画像センタリングの強制用）
   document.body.setAttribute('data-page', 'review');
@@ -21,35 +25,27 @@ async function init() {
   if (error || !r) throw error || new Error('not found');
 
   // 反映
-  byId('detailTitle').textContent = r.title;
+  byId('detailTitle').textContent = r.title || '';
   byId('detailMeta').textContent =
-    `${r.genre} / ${r.author_name || '匿名'} / ${new Date(r.created_at).toLocaleDateString()}`;
+    `${r.genre || '-'} / ${r.author_name || '匿名'} / ${new Date(r.created_at).toLocaleDateString('ja-JP')}`;
+  // “スコア”の文字は付けず、数字のみ
   byId('detailScore').textContent = String(r.score ?? '-');
-  byId('detailThumb').src = r.product_image_url || 'https://placehold.co/256x256?text=No+Image';
+
+  const img = byId('detailThumb');
+  img.src = r.product_image_url || 'https://placehold.co/256x256?text=No+Image';
+  img.alt = r.product_name || r.title || 'image';
+
+  // 本文（プレーンテキストを安全に表示）
   byId('detailBody').textContent = r.body || '';
 
   // ===== 表示回数（失敗しても落ちない） =====
-  recordView(sb, reviewId);
+  recordView(sb, reviewId); // await しない：失敗してもUIは続行
+
+  // ===== いいね（初期状態反映＋押下時処理） =====
+  setupLike(sb, reviewId).catch(console.warn);
 
   // ===== コメント（20件ずつ・昇順番号） =====
   const cm = setupComments(sb, reviewId);
-
-  // ===== いいね =====
-  const likeBtn = byId('likeBtn');
-  likeBtn?.addEventListener('click', async () => {
-    const user = await getUser(sb);
-    if (!user) return needLogin('「いいね」するにはログインが必要です。');
-
-    try {
-      await sb.from('review_likes').insert({ review_id: reviewId, user_id: user.id });
-      toast('いいねしました');
-      likeBtn.disabled = true;
-      likeBtn.textContent = 'いいね済み';
-    } catch (e) {
-      toast('すでに「いいね」済みの可能性があります');
-      console.warn(e?.message || e);
-    }
-  });
 
   // ===== コメント投稿 =====
   byId('commentForm')?.addEventListener('submit', async (e) => {
@@ -96,6 +92,8 @@ async function init() {
       if (!data?.session || !data?.user) throw new Error('セッション確立に失敗');
       window.closeModal('#modalLogin');
       toast('ログインしました');
+      // ログイン後に「いいね済み状態」を再判定
+      setupLike(sb, reviewId).catch(console.warn);
     } catch (err) {
       alert('ログインに失敗しました: ' + (err?.message || err));
     } finally {
@@ -130,6 +128,45 @@ async function init() {
       toggleBtn(btn, false);
     }
   });
+}
+
+/* ===== いいね：初期状態＋押下処理 ===== */
+async function setupLike(sb, reviewId) {
+  const likeBtn = byId('likeBtn');
+  if (!likeBtn) return;
+
+  likeBtn.disabled = false;
+  likeBtn.textContent = 'いいね';
+
+  const user = await getUser(sb);
+  if (user) {
+    // すでに「いいね」済みかを確認してボタン状態を反映
+    try {
+      const { data: liked } = await sb.from('review_likes')
+        .select('id').eq('review_id', reviewId).eq('user_id', user.id).maybeSingle();
+      if (liked) {
+        likeBtn.disabled = true;
+        likeBtn.textContent = 'いいね済み';
+      }
+    } catch {}
+  }
+
+  likeBtn.onclick = async () => {
+    const u = await getUser(sb);
+    if (!u) return needLogin('「いいね」するにはログインが必要です。');
+
+    likeBtn.disabled = true;
+    try {
+      await sb.from('review_likes').insert({ review_id: reviewId, user_id: u.id });
+      toast('いいねしました');
+      likeBtn.textContent = 'いいね済み';
+    } catch (e) {
+      // 二重押しやUK違反など
+      toast('すでに「いいね」済みの可能性があります');
+      console.warn(e?.message || e);
+      likeBtn.textContent = 'いいね済み';
+    }
+  };
 }
 
 /* ===== コメント（20件ずつ・昇順番号） ===== */
@@ -181,7 +218,7 @@ function setupComments(sb, reviewId) {
 
   function commentItem(n, c) {
     const name = escapeHtml(c.commenter_name || '匿名');
-    const when = new Date(c.created_at).toLocaleString();
+    const when = new Date(c.created_at).toLocaleString('ja-JP');
     const body = escapeHtml(c.body || '');
     return `
       <li class="review-box">
@@ -225,7 +262,7 @@ function byId(id){ return document.getElementById(id); }
 async function getUser(sb){ const { data: { user } } = await sb.auth.getUser(); return user; }
 function needLogin(msg){
   showInlineNotice(msg);
-  window.openModal('#modalLogin');
+  window.openModal?.('#modalLogin');
 }
 function showInlineNotice(msg){
   let el = document.getElementById('authNotice');
