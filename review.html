@@ -10,9 +10,17 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <link rel="stylesheet" href="css/style.css?v=2025-10-03" />
-  <script defer src="js/common.js?v=2025-10-03"></script>
-  <script defer src="js/review.js?v=2025-10-03"></script>
+  <link rel="stylesheet" href="css/style.css?v=2025-10-05" />
+  <script defer src="js/common.js?v=2025-10-05"></script>
+  <script defer src="js/review.js?v=2025-10-05"></script>
+
+  <!-- このページ専用の最小スタイル（画像センター＆スコア大） -->
+  <style>
+    body[data-page="review"] .mediaBox{width:128px;height:128px;border-radius:14px;background:#eef2f7;display:grid;place-items:center;overflow:hidden}
+    @media(min-width:640px){body[data-page="review"] .mediaBox{width:180px;height:180px}}
+    body[data-page="review"] .mediaBox img{max-width:100%;max-height:100%;object-fit:contain;object-position:center;display:block}
+    .score-badge{font-size:clamp(40px,8vw,80px);font-weight:800;line-height:1}
+  </style>
 </head>
 <body class="bg-gray-50 text-gray-900" data-page="review">
   <header class="border-b bg-white">
@@ -35,7 +43,7 @@
         <div class="flex-1">
           <h1 class="title" id="detailTitle">タイトル読み込み中</h1>
           <p class="meta" id="detailMeta">ジャンル / レビュアー名 / 日付</p>
-          <div class="meta" id="detailScore">スコア: -</div>
+          <div class="mt-2 score-badge" id="detailScore">-</div>
           <div class="mt-3">
             <button id="likeBtn" class="btn-xs btn">いいね</button>
           </div>
@@ -53,60 +61,53 @@
           <button class="btn" type="submit">投稿する</button>
         </div>
       </form>
-      <p class="meta" id="commentHint">※ 未ログインの場合は投稿時にログインモーダルを表示します。</p>
+      <p class="meta" id="commentHint">※ ログインしていない場合、投稿ボタン押下でログインモーダルが表示されます。</p>
     </section>
 
-    <!-- 下段：コメント履歴 -->
-<section class="block">
-  <h2 class="title">コメント</h2>
-  <ul id="commentList" class="space-y-3"></ul>
-  <div class="text-center mt-3">
-    <button id="commentMore" class="btn-outline hidden">もっと見る</button>
-  </div>
-</section>
+    <!-- 下段：コメント履歴（掲示板風：昇順に #1, #2, ...） -->
+    <section class="block">
+      <h2 class="title">コメント</h2>
+      <ul id="commentList" class="space-y-3"></ul>
+      <div class="text-center mt-3">
+        <button id="commentMore" class="btn-outline hidden">もっと見る</button>
+      </div>
+    </section>
+  </main>
 
   <footer class="py-10 text-center text-sm text-gray-500">© 2025 だれでもレビュー</footer>
 
-<!-- レビュー画面用 簡易ログイン/登録モーダル -->
-<!-- トースト（右下）※無ければ共通で使えるようここにも置いておく -->
-<div id="toastWrap" class="toast-wrap"></div>
+  <!-- 右下トースト -->
+  <div id="toastWrap" class="toast-wrap"></div>
 
-<!-- ログイン（通常：メール＋パスワード） -->
-<div id="modalLogin" class="modal hidden" aria-hidden="true">
-  <div class="overlay"></div>
-  <div class="panel">
-    <div class="flex items-center justify-between mb-3">
-      <h3 class="title">ログイン</h3>
-      <button class="btn-ghost" data-close="#modalLogin">閉じる</button>
-    </div>
-    <form id="loginFormReview" class="space-y-3">
-      <input id="loginEmailReview" class="inp" type="email" placeholder="メールアドレス" required />
-      <input id="loginPassReview" class="inp" type="password" placeholder="パスワード" required />
-      <button class="btn w-full" type="submit">ログイン</button>
-    </form>
-    <div class="text-right mt-3">
-      <button id="goRegisterFromLogin" class="btn-outline">新規会員登録へ</button>
+  <!-- ログイン（メール＋パスワード） -->
+  <div id="modalLogin" class="modal hidden" aria-hidden="true">
+    <div class="overlay"></div>
+    <div class="panel">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="title">ログイン</h3>
+        <button class="btn-ghost" data-close="#modalLogin">閉じる</button>
+      </div>
+      <form id="loginFormReview" class="space-y-3">
+        <input id="loginEmailReview" class="inp" type="email" placeholder="メールアドレス" required />
+        <input id="loginPassReview" class="inp" type="password" placeholder="パスワード" required />
+        <button class="btn w-full" type="submit">ログイン</button>
+      </form>
+      <div class="text-right mt-3">
+        <button id="goRegisterFromLogin" class="btn-outline">新規会員登録へ</button>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- 新規会員登録（仮登録：メール＋パスワード） -->
-<div id="modalRegister" class="modal hidden" aria-hidden="true">
-  <div class="overlay"></div>
-  <div class="panel">
-    <div class="flex items-center justify-between mb-3">
-      <h3 class="title">新規会員登録（仮登録）</h3>
-      <button class="btn-ghost" data-close="#modalRegister">閉じる</button>
-    </div>
-    <form id="registerFormReview" class="space-y-3">
-      <input id="regEmailReview" class="inp" type="email" placeholder="メールアドレス" required />
-      <input id="regPassReview" class="inp" type="password" placeholder="パスワード（8文字以上）" minlength="8" required />
-      <input id="regPass2Review" class="inp" type="password" placeholder="確認用パスワード" minlength="8" required />
-      <button class="btn w-full" type="submit">仮登録メールを送信</button>
-    </form>
-  </div>
-</div>
-
-
-</body>
-</html>
+  <!-- 新規会員登録（仮登録：メール＋パスワード） -->
+  <div id="modalRegister" class="modal hidden" aria-hidden="true">
+    <div class="overlay"></div>
+    <div class="panel">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="title">新規会員登録（仮登録）</h3>
+        <button class="btn-ghost" data-close="#modalRegister">閉じる</button>
+      </div>
+      <form id="registerFormReview" class="space-y-3">
+        <input id="regEmailReview" class="inp" type="email" placeholder="メールアドレス" required />
+        <input id="regPassReview" class="inp" type="password" placeholder="パスワード（8文字以上）" minlength="8" required />
+        <input id="regPass2Review" class="inp" type="password" placeholder="確認用パスワード" minlength="8" required />
+        <b
