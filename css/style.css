@@ -1,0 +1,13 @@
+*{box-sizing:border-box}
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+.sec{font-weight:700;font-size:1.125rem}
+.inp{border:1px solid #d1d5db;border-radius:.375rem;padding:.5rem .75rem;width:100%;background:#fff}
+.label{font-size:.875rem;color:#4b5563;margin-bottom:.25rem;display:block}
+.btn{background:#111827;color:#fff;padding:.5rem .75rem;border-radius:.375rem}
+.btn:hover{opacity:.9}
+.btn-outline{border:1px solid #111827;color:#111827;padding:.5rem .75rem;border-radius:.375rem;background:#fff}
+.card{display:flex;gap:.75rem;border:1px solid #e5e7eb;border-radius:.5rem;padding:.75rem;background:#fff}
+.card img{width:72px;height:72px;object-fit:cover;border-radius:.375rem;background:#f3f4f6}
+.meta{font-size:.75rem;color:#6b7280}
+.title{font-weight:700}
+.hidden{display:none}
