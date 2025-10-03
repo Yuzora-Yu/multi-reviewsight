@@ -1,3 +1,17 @@
+// 接続ヘルスチェック（起動時に一度だけ）
+(async () => {
+  try {
+    const { error } = await window.supabase.from('reviews').select('id').limit(1);
+    if (error) {
+      console.error('Supabase接続エラー:', error);
+      alert('データ取得エラー: ' + (error.message || 'unknown'));
+    }
+  } catch (e) {
+    console.error('致命的: Supabaseに到達できません', e);
+    alert('ネットワークまたは設定エラーでDBに到達できませんでした');
+  }
+})();
+
 // ----- サイト共通設定 -----
 window.GENRES = ['ゲーム','漫画','アニメ','書籍','映画','ドラマ','IT','DIY','ファッション','その他'];
 
