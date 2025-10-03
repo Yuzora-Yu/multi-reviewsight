@@ -14,8 +14,14 @@ if (!('supabase' in window) || !window.supabase?.createClient) {
   throw new Error('supabase-js not loaded');
 }
 
-// クライアント生成（名前の衝突を避け、明示的に window.sb に格納）
-window.sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// クライアント生成
+const _client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// 推奨: window.sb を公式ハンドルに
+window.sb = _client;
+
+// 後方互換: window.supabase で直接 .from(...) を呼ばれても動くように、クライアントを上書き
+window.supabase = _client;
 
 // 便利関数
 window.GENRES = ['ゲーム','漫画','アニメ','書籍','映画','ドラマ','IT','DIY','ファッション','その他'];
@@ -46,7 +52,7 @@ window.reviewCard = (r) => {
   </a>`;
 };
 
-// ヘッダーのログイン/ログアウト表示（任意）
+// ヘッダーのログイン/ログアウト表示
 document.addEventListener('DOMContentLoaded', async () => {
   try {
     const { data: { user } } = await window.sb.auth.getUser();
@@ -64,19 +70,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
-// --- 接続の健全性チェック（最初の画面で分かるように） ---
+// 疎通チェック（IIFEで。トップレベルawaitは使わない）
 (async () => {
   try {
-    // 軽い HEAD 相当のクエリで疎通を確認
-    const { error } = await window.sb
-      .from('reviews')
-      .select('id', { head: true, count: 'exact' })
-      .limit(1);
-
+    const { error } = await window.sb.from('reviews').select('id', { head: true, count: 'exact' }).limit(1);
     if (error) {
-      // RLS/権限エラー or URL/Key ミス
       console.error('Supabase error:', error);
-      // 日本語アラート（あなたのスクショ文言に合わせています）
       alert('ネットワークまたは設定エラーでDBに到達できませんでした\n\n' +
             `詳細: ${error.message || 'unknown error'}`);
     } else {
