@@ -243,3 +243,18 @@ select {
   body, .bg-gray-50, .bg-white { background: var(--bg) !important; }
   .text-gray-900 { color: var(--text) !important; }
 }
+
+/* ===== ヘッダの「マイページ」だけ2行に収める ===== */
+header a[href*="my.html"],
+header a[href*="/my"],
+header .nav-mypage {
+  font-size: clamp(11px, 2.6vw, 14px); /* 狭い横画面で少しだけ縮む */
+  line-height: 1.1;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;  /* 2行でトリミング */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: normal;
+  max-width: 10.5em;      /* 収まりやすい幅。必要なら調整可 */
+  text-wrap: balance;
+}
