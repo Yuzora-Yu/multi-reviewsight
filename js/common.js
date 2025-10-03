@@ -12,8 +12,9 @@ window.GENRES = [
 // 何も無ければプレースホルダ。あなたのプロジェクトの実値に置き換えてOK。
 (function initSupabase() {
   if (window.sb) return;
-  const url = window.SUPABASE_URL || 'https://YOUR-PROJECT.supabase.co';
-  const anon = window.SUPABASE_ANON_KEY || 'YOUR-ANON-KEY';
+  const url = window.SUPABASE_URL || 'Project URL
+https://ovkumzhdxjljukfqchvu.supabase.co';
+  const anon = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im92a3VtemhkeGpsanVrZnFjaHZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk0NTMwMjcsImV4cCI6MjA3NTAyOTAyN30.MOzQtbiP9Ac1QA1Tsk9A3bvu5wHUvv3ggUd8l-jSvcw';
   if (!window.supabase) {
     console.error('Supabase SDK が読み込まれていません。<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> を <head> に入れてください。');
     return;
