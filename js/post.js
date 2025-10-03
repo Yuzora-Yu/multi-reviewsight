@@ -1,193 +1,158 @@
-// js/post.js  — レビュー投稿フロー（プレビュー → 最終確認 → 投稿）
-// 依存：window.sb（Supabaseクライアント）, DOMPurify, html2canvas,
-//       window.sha256hex, window.appUrl, window.openTweetIntent
+// js/post.js — GENRES自動注入 / レビュアーネーム自動入力 / 入力→確認→投稿 の本流
 
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
+  main().catch(console.error);
+});
+
+async function main() {
   const sb = window.sb;
 
-  // --- 要素参照 ---
-  const form = document.getElementById('postForm');
-  const confirmSection = document.getElementById('confirmSection');
-
-  const els = {
-    product_name:      document.getElementById('product_name'),
-    product_author:    document.getElementById('product_author'),
-    product_link_url:  document.getElementById('product_link_url'),
-    product_image_url: document.getElementById('product_image_url'),
-    price_text:        document.getElementById('price_text'),
-    score:             document.getElementById('score'),
-    genre:             document.getElementById('genre'),
-    author_name:       document.getElementById('author_name'),
-    title:             document.getElementById('title'),
-    body:              document.getElementById('body'),
-    edit_password:     document.getElementById('edit_password'),
-  };
-
-  // --- プレビュー領域 ---
-  const pv = {
-    img:   document.getElementById('previewImg'),
-    genre: document.getElementById('previewGenre'),
-    title: document.getElementById('previewTitle'),
-    meta:  document.getElementById('previewMeta'),
-    body:  document.getElementById('previewBody'),
-    score: document.getElementById('previewScore'),
-  };
-
-  // --- ログインしていたらレビュアーネームを自動補完（profiles） ---
+  // 1) GENRES を #genre に注入（common.js の populateGenreSelects でも可）
   try {
-    const { data: { user } } = await sb.auth.getUser();
-    if (user) {
-      const { data: prof } = await sb.from('profiles')
-        .select('reviewer_name').eq('user_id', user.id).maybeSingle();
-      if (prof?.reviewer_name && !els.author_name.value) {
-        els.author_name.value = prof.reviewer_name;
-      }
+    const sel = document.getElementById('genre');
+    if (sel && window.GENRES) {
+      const keep = sel.querySelector('option[value=""]');
+      sel.innerHTML = '';
+      if (keep) sel.appendChild(keep);
+      window.GENRES.forEach(g => {
+        const o = document.createElement('option');
+        o.value = g; o.textContent = g;
+        sel.appendChild(o);
+      });
     }
-  } catch { /* noop */ }
+  } catch (e) { console.warn('genre populate failed', e); }
 
-  // --- 商品選択モーダル（Amazon） ---
-  const picker = document.getElementById('productPicker');
-  const openPickerBtn = document.getElementById('openProductPicker');
-  const closePickerBtn = document.getElementById('closePicker');
-  const openAmazonBtn  = document.getElementById('openAmazon');
-  const autoFetchBtn   = document.getElementById('autoFetch');
+  // 2) レビュアーネームをページ表示直後に自動入力
+  await presetAuthorName(sb);
 
-  if (openPickerBtn && picker) {
-    openPickerBtn.addEventListener('click', () => {
-      picker.classList.remove('hidden'); picker.classList.add('flex');
-    });
-    closePickerBtn?.addEventListener('click', () => {
-      picker.classList.add('hidden'); picker.classList.remove('flex');
-    });
-    openAmazonBtn?.addEventListener('click', () => {
-      const q = encodeURIComponent(document.getElementById('amazonQuery').value.trim() || '');
-      const url = `https://www.amazon.co.jp/s?k=${q}`;
-      window.open(url, '_blank', 'noopener,noreferrer');
-    });
-    autoFetchBtn?.addEventListener('click', async () => {
-      const url = document.getElementById('amazonUrl').value.trim();
-      if (!url) return alert('商品ページURLを入力してください');
-      try {
-        const resp = await fetch('https://ovkumzhdxjljukfqchvu.supabase.co/functions/v1/meta-from-url', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url })
-        });
-        if (!resp.ok) throw new Error('取得に失敗しました');
-        const meta = await resp.json();
+  // 3) 商品選択モーダル（最小実装）
+  setupProductPicker();
 
-        if (meta.name)  els.product_name.value       = meta.name;
-        if (meta.brand) els.product_author.value     = meta.brand;
-        if (meta.image) els.product_image_url.value  = meta.image;
-        if (meta.price_text) els.price_text.value    = meta.price_text;
-        if (meta.product_url) els.product_link_url.value = meta.product_url;
-
-        updatePreview();
-        alert('商品情報を反映しました');
-        picker.classList.add('hidden'); picker.classList.remove('flex');
-      } catch (e) {
-        alert('自動取得できませんでした。手入力でお願いします。');
-      }
-    });
-  }
-
-  // --- プレビュー更新 ---
-  function updatePreview() {
-    const img = els.product_image_url.value.trim();
-    pv.img.src = img || 'https://placehold.co/256x256?text=No+Image';
-    pv.genre.textContent = els.genre.value;
-    pv.title.textContent = els.title.value.trim();
-    pv.meta.textContent = [
-      els.product_name.value.trim(),
-      els.product_author.value.trim(),
-      els.price_text.value.trim()
-    ].filter(Boolean).join(' / ');
-    pv.body.textContent = els.body.value;
-    pv.score.textContent = String(els.score.value || '');
-  }
-
-  // 入力のたびにプレビューを更新（軽量）
-  ['input','change'].forEach(ev => {
-    form.addEventListener(ev, (e) => {
-      const t = e.target;
-      if (t && (t.id in els)) updatePreview();
-    });
-  });
-
-  // --- 1. 入力→最終確認表示 ---
-  form.addEventListener('submit', (e) => {
+  // 4) 入力→確認
+  document.getElementById('postForm').addEventListener('submit', (e) => {
     e.preventDefault();
-    updatePreview();
-    confirmSection.classList.remove('hidden');
-    confirmSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    showConfirm();
   });
 
-  // --- 2. 修正に戻る ---
   document.getElementById('backEdit').addEventListener('click', () => {
-    confirmSection.classList.add('hidden');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    document.getElementById('confirmSection').classList.add('hidden');
+    document.getElementById('postForm').classList.remove('hidden');
   });
 
-  // --- 3. プレビューを画像保存（ローカルDL） ---
-  document.getElementById('saveImage').addEventListener('click', async () => {
-    const node = document.getElementById('previewCard');
-    const canvas = await html2canvas(node, { useCORS: true, scale: 2 });
-    const a = document.createElement('a');
-    a.download = 'review.png';
-    a.href = canvas.toDataURL('image/png');
-    a.click();
-  });
-
-  // --- 4. 投稿（DBへinsert） ---
+  // 5) 投稿する（実POST）
   document.getElementById('confirmPost').addEventListener('click', async () => {
-    // 必須軽いバリデーション
-    if (!els.product_name.value.trim()) return alert('商品名を入力してください');
-    if (!els.title.value.trim())        return alert('タイトルを入力してください');
-    const s = Number(els.score.value);
-    if (!Number.isFinite(s) || s < 0 || s > 100) return alert('得点は0〜100で入力してください');
-
-    const { data: { user } } = await sb.auth.getUser();
-    // 表示名の既定：入力 > profiles.reviewer_name > user.emailローカル部 > 匿名
-    let fallbackName = '匿名';
-    if (user?.email) fallbackName = user.email.split('@')[0];
+    const btn = document.getElementById('confirmPost');
+    toggleBtn(btn, true, '投稿中…');
     try {
-      if (user) {
-        const { data: prof } = await sb.from('profiles')
-          .select('reviewer_name').eq('user_id', user.id).maybeSingle();
-        if (prof?.reviewer_name) fallbackName = prof.reviewer_name;
-      }
-    } catch {}
+      const payload = collectPayload();
+      // 文字列サニタイズ（本文）
+      payload.body = DOMPurify.sanitize(payload.body);
 
-    const authorName = (els.author_name.value || '').trim() || fallbackName;
+      const { data, error } = await sb.from('reviews').insert(payload).select('id').single();
+      if (error) throw error;
 
-    const payload = {
-      product_name:      els.product_name.value.trim(),
-      product_author:    els.product_author.value.trim() || null,
-      product_link_url:  els.product_link_url.value.trim() || null,
-      product_image_url: els.product_image_url.value.trim() || null,
-      price_text:        els.price_text.value.trim() || null,
-      score:             s,
-      genre:             els.genre.value,
-      author_name:       authorName,
-      author_user_id:    user?.id || null,
-      title:             els.title.value.trim(),
-      body:              DOMPurify.sanitize(els.body.value),
-      edit_password_hash: els.edit_password.value
-        ? await window.sha256hex(els.edit_password.value) : null,
-    };
-
-    const { data, error } = await sb.from('reviews').insert(payload).select().single();
-    if (error) {
-      alert('投稿エラー：' + error.message);
-      return;
+      toast('投稿しました');
+      setTimeout(() => { location.href = `review.html?id=${data.id}`; }, 800);
+    } catch (err) {
+      alert('投稿に失敗しました: ' + (err?.message || err));
+    } finally {
+      toggleBtn(btn, false);
     }
-    alert('投稿しました！ページへ移動します。');
-    location.href = window.appUrl('review.html?id=' + data.id);
   });
+}
 
-  // --- 5. Xへ投稿（下書き：リンクだけ） ---
-  document.getElementById('shareX').addEventListener('click', () => {
-    const text = `「${els.title.value.trim() || 'レビュー'}」を投稿準備中`;
-    window.openTweetIntent(window.APP_BASE_ABS, text, ['レビュー']);
+/* ===== helpers ===== */
+
+async function presetAuthorName(sb) {
+  const input = document.getElementById('author_name');
+  if (!input) return;
+
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) { input.placeholder = 'ログインすると自動入力されます'; return; }
+
+  let name = (user.email || '').split('@')[0];
+  try {
+    const { data: prof } = await sb
+      .from('profiles')
+      .select('display_name')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    if (prof?.display_name) name = prof.display_name;
+  } catch {}
+
+  input.value = name;
+}
+
+function setupProductPicker() {
+  const picker = document.getElementById('productPicker');
+  const openBtn = document.getElementById('openProductPicker');
+  const closeBtn = document.getElementById('closePicker');
+  const openAmazon = document.getElementById('openAmazon');
+  const autoFetch = document.getElementById('autoFetch');
+
+  openBtn.addEventListener('click', () => picker.classList.remove('hidden'));
+  closeBtn.addEventListener('click', () => picker.classList.add('hidden'));
+  openAmazon.addEventListener('click', () => {
+    const q = encodeURIComponent(document.getElementById('amazonQuery').value || '');
+    window.open(`https://www.amazon.co.jp/s?k=${q}`, '_blank');
   });
-});
+  autoFetch.addEventListener('click', () => {
+    const url = document.getElementById('amazonUrl').value.trim();
+    if (url) {
+      document.getElementById('product_link_url').value = url;
+      picker.classList.add('hidden');
+    }
+  });
+}
+
+function showConfirm() {
+  const data = collectPayload();
+
+  // プレビュー反映
+  document.getElementById('previewImg').src = data.product_image_url || 'https://placehold.co/128x128?text=No+Image';
+  document.getElementById('previewGenre').textContent = data.genre || '';
+  document.getElementById('previewTitle').textContent = data.title || '';
+  document.getElementById('previewMeta').textContent =
+    `${data.product_name || ''} / ${data.author_name || '匿名'}`;
+  document.getElementById('previewBody').textContent = data.body || '';
+  document.getElementById('previewScore').textContent = String(data.score ?? '-');
+
+  document.getElementById('postForm').classList.add('hidden');
+  document.getElementById('confirmSection').classList.remove('hidden');
+}
+
+function collectPayload() {
+  const payload = {
+    product_name: v('product_name'),
+    product_author: v('product_author'),
+    product_link_url: v('product_link_url'),
+    product_image_url: v('product_image_url'),
+    price_text: v('price_text'),
+    score: Number(v('score') || 0),
+    genre: v('genre'),
+    author_name: v('author_name').trim() || '匿名',
+    title: v('title'),
+    body: v('body'),
+    edit_password: v('edit_password') || null
+  };
+  return payload;
+
+  function v(id) { return (document.getElementById(id)?.value ?? '').trim(); }
+}
+
+function toast(msg) {
+  const wrap = document.getElementById('toastWrap') || (() => {
+    const w = document.createElement('div'); w.id='toastWrap'; w.className='toast-wrap'; document.body.appendChild(w); return w;
+  })();
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  wrap.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('show'));
+  setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 250); }, 2000);
+}
+function toggleBtn(btn, busy, altText){
+  if (!btn) return;
+  if (busy){ btn.dataset._t = btn.textContent; btn.disabled = true; if(altText) btn.textContent = altText; }
+  else { btn.disabled = false; btn.textContent = btn.dataset._t || btn.textContent; }
+}
