@@ -1,4 +1,4 @@
-// js/review.js — 詳細：本文/画像、コメント投稿/履歴、モーダルUI反応
+// js/review.js — 詳細：本文/画像、コメント投稿/履歴（review_comments テーブル対応）
 
 document.addEventListener('DOMContentLoaded', () => {
   init().catch(e => {
@@ -49,10 +49,10 @@ async function init() {
       if (prof?.display_name) author_name = prof.display_name;
     } catch {}
 
-    const ins = await sb.from('comments').insert({
+    const { error: insErr } = await sb.from('review_comments').insert({
       review_id: id, body, user_id: user.id, author_name
     });
-    if (ins.error) { alert('コメント投稿に失敗しました'); return; }
+    if (insErr) { alert('コメント投稿に失敗しました'); return; }
 
     document.getElementById('commentBody').value = '';
     await refreshComments(sb, id);
@@ -94,7 +94,7 @@ async function refreshComments(sb, reviewId) {
   const list = document.getElementById('commentList');
   try {
     const { data, error } = await sb
-      .from('comments')
+      .from('review_comments')
       .select('id, body, author_name, created_at')
       .eq('review_id', reviewId)
       .order('created_at', { ascending: false })
@@ -108,7 +108,7 @@ async function refreshComments(sb, reviewId) {
       </li>
     `).join('') || `<li class="meta">まだコメントはありません</li>`;
   } catch (e) {
-    console.error('comments fetch failed', e);
+    console.error('review_comments fetch failed', e);
     list.innerHTML = `<li class="meta">コメントの取得に失敗しました</li>`;
   }
 }
