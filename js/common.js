@@ -1,70 +1,30 @@
-// js/common.js —— フル置換版（GENRES あり）
+// js/common.js —— フル置換版（GENRES / Supabase 初期化 / 共通UI / カード / 画像フィット / ジャンル自動投入）
 
-// ==== カテゴリ（全ページ共通で使えるように window に） ====
+/* ==== カテゴリ（全ページ共通で使う） ==== */
 window.GENRES = [
   'ゲーム','漫画','アニメ','音楽','書籍','映画','ドラマ',
-  'ソフトウェア','IT関連','DIY関連','ファッション','その他'
+  'ソフトウェア','IT関連','DIY関連','飲食','ファッション','その他'
 ];
 
-// ==== Supabase 接続（固定） ====
-const SUPABASE_URL = 'https://ovkumzhdxjljukfqchvu.supabase.co';
-const SUPABASE_ANON_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im92a3VtemhkeGpsanVrZnFjaHZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk0NTMwMjcsImV4cCI6MjA3NTAyOTAyN30.MOzQtbiP9Ac1QA1Tsk9A3bvu5wHUvv3ggUd8l-jSvcw';
+/* ==== Supabase 初期化 ==== */
+// 既に window.sb があれば再生成しない。
+// URLやKEYは、既存のグローバル値(window.SUPABASE_URL 等)があればそれを優先。
+// 何も無ければプレースホルダ。あなたのプロジェクトの実値に置き換えてOK。
+(function initSupabase() {
+  if (window.sb) return;
+  const url = window.SUPABASE_URL || 'https://YOUR-PROJECT.supabase.co';
+  const anon = window.SUPABASE_ANON_KEY || 'YOUR-ANON-KEY';
+  if (!window.supabase) {
+    console.error('Supabase SDK が読み込まれていません。<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> を <head> に入れてください。');
+    return;
+  }
+  window.sb = window.supabase.createClient(url, anon);
+})();
 
-// SDK のファクトリ(window.supabase)からクライアントを作り、window.sb に固定
-window.sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-// ==== サイト共通 ====
-window.APP_BASE_ABS = 'https://yuzora-yu.github.io/multi-reviewsight/';
-
-// クエリ取得
+/* ==== ユーティリティ ==== */
 window.qs = (key, def = null) => new URLSearchParams(location.search).get(key) ?? def;
 
-// SHA-256(hex)
-window.sha256hex = async (text) => {
-  const enc = new TextEncoder().encode(text);
-  const buf = await crypto.subtle.digest('SHA-256', enc);
-  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
-};
-
-// X共有Intent
-window.openTweetIntent = (url, text = 'レビューを投稿しました！', hashtags = ['レビュー']) => {
-  const u = new URL('https://twitter.com/intent/tweet');
-  u.searchParams.set('url', url);
-  if (text) u.searchParams.set('text', text);
-  if (hashtags?.length) u.searchParams.set('hashtags', hashtags.join(','));
-  window.open(u.toString(), '_blank');
-};
-
-// トースト
-window.toast = (msg) => {
-  const el = document.createElement('div');
-  el.className = 'toast';
-  el.textContent = msg;
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 2600);
-};
-
-// --- Display Name の取得（共通で使う） ---
-window.getDisplayName = async () => {
-  const { data: { user } } = await window.sb.auth.getUser();
-  if (!user) return null;
-
-  // profiles から取得（なければメールIDを暫定返し）
-  const { data, error } = await window.sb
-    .from('profiles')
-    .select('display_name')
-    .eq('user_id', user.id)
-    .maybeSingle();
-
-  if (error) {
-    console.warn('profiles fetch error:', error.message);
-  }
-  const emailName = user.email ? user.email.split('@')[0] : 'ユーザー';
-  return data?.display_name || emailName;
-};
-
-/* ==== 一覧カード（画像に data-fit="auto" を付ける版・全文） ==== */
+/* ==== 一覧カード（画像に data-fit="auto"） ==== */
 window.reviewCard = (r) => {
   const img = r.product_image_url || 'https://placehold.co/128x128?text=No+Image';
   const url = `review.html?id=${r.id}`;
@@ -82,7 +42,7 @@ window.reviewCard = (r) => {
   </a>`;
 };
 
-/* ==== カード内に統計（表示数/いいね/コメント）を含める版・全文 ==== */
+/* ==== カード（統計を内包：表示数/いいね/コメント） ==== */
 window.reviewCardWithStats = (r, { views = 0, likes = 0, comments = 0 } = {}) => {
   const img = r.product_image_url || 'https://placehold.co/128x128?text=No+Image';
   const url = `review.html?id=${r.id}`;
@@ -105,7 +65,7 @@ window.reviewCardWithStats = (r, { views = 0, likes = 0, comments = 0 } = {}) =>
   </a>`;
 };
 
-/* ==== 画像の縦横比で表示方式を自動切替（fit-w / fit-h を付与）・全文 ==== */
+/* ==== 画像の縦横比で表示方式を自動切替（fit-w / fit-h） ==== */
 window.fitThumbs = (root = document) => {
   const imgs = [...root.querySelectorAll('img[data-fit="auto"]')];
   imgs.forEach(img => {
@@ -127,14 +87,17 @@ window.fitThumbs = (root = document) => {
   });
 };
 
-// --- ヘッダー（ログイン/ログアウト切替 + 管理リンク） ---
+/* ==== ヘッダー：ログイン/ログアウト切替 ＋ 管理リンク挿入（マイページとログインの間） ==== */
 document.addEventListener('DOMContentLoaded', async () => {
   try {
     const sb = window.sb;
+    if (!sb) return;
+
     const { data: { user } } = await sb.auth.getUser();
 
     // ログイン/ログアウト切替
-    const loginLink = document.getElementById('loginLink');
+    const loginLink = document.getElementById('loginLink')
+      || document.querySelector('header a[href*="auth"]');
     if (loginLink) {
       if (user) {
         loginLink.textContent = 'ログアウト';
@@ -149,30 +112,97 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
 
-    // 管理者のみ「管理」ナビを表示
-    if (user) {
-      try {
-        // DBの is_admin() 関数をRPCで呼ぶ（SQLは前に追加済み）
-        const { data: isAdmin, error } = await sb.rpc('is_admin');
-        if (!error && isAdmin) {
-          const nav = document.querySelector('header nav');
-          if (nav && !nav.querySelector('[data-admin-link]')) {
-            const a = document.createElement('a');
-            a.href = 'admin.html';
-            a.className = 'btn-outline';
-            a.textContent = '管理';
-            a.setAttribute('data-admin-link', '1');
-            nav.appendChild(a);
+    // 管理リンク（is_admin RPC を使う実装を想定。失敗しても無視）
+    try {
+      const { data: isAdmin, error } = await sb.rpc?.('is_admin'); // boolean を返す想定
+      if (!error && isAdmin) {
+        const nav = document.getElementById('navRight')
+          || document.querySelector('header nav')
+          || document.querySelector('header .mx');
+        if (nav) {
+          const loginEl = document.getElementById('loginLink')
+            || nav.querySelector('a[href*="auth"]');
+          const myEl = document.getElementById('myLink')
+            || nav.querySelector('a[href*="my.html"]');
+
+          // 既に存在していなければ挿入
+          let adminEl = nav.querySelector('.nav-admin');
+          if (!adminEl) {
+            adminEl = document.createElement('a');
+            adminEl.href = 'admin.html';
+            adminEl.className = 'btn btn-outline nav-admin';
+            adminEl.textContent = '管理';
+          }
+
+          // 「マイページとログインの間」に差し込み
+          if (loginEl) {
+            nav.insertBefore(adminEl, loginEl);
+          } else if (myEl && myEl.parentNode) {
+            myEl.parentNode.insertBefore(adminEl, myEl.nextSibling);
+          } else {
+            nav.appendChild(adminEl);
           }
         }
-      } catch (e) {
-        console.warn('is_admin RPC error:', e);
       }
+    } catch (e) {
+      console.warn('is_admin RPC 呼び出しに失敗しました（非管理か未定義）:', e?.message || e);
     }
 
-    console.log('Supabase reachable.');
   } catch (e) {
-    alert('ネットワークまたは設定エラーでDBに到達できませんでした');
-    console.error(e);
+    console.error('ヘッダー初期化エラー:', e);
   }
+});
+
+/* ==== ジャンル<select> 自動投入（index.html 等のハードコーディングを置換） ==== */
+/*
+  対象：
+  - <select id="qGenre">（検索フォーム）
+  - <select id="rankGenre">（ランキングの絞り込み）
+  - data-genres 属性が付いた <select>（任意のページ）
+  使い方：
+  - デフォルトで「すべて」やプレースホルダを入れたい場合は、先に<option>を1つ書いておくと保持されます。
+    例）<select id="qGenre"><option value="">ジャンル：すべて</option></select>
+*/
+window.populateGenreSelects = () => {
+  const sels = [
+    ...document.querySelectorAll('select#qGenre, select#rankGenre, select[data-genres]')
+  ];
+  sels.forEach(sel => {
+    // 先頭にデフォルト<option>が1つだけある場合は保持
+    const defaultOpt = sel.options.length === 1 ? sel.options[0] : null;
+    const current = sel.value;
+
+    // 一旦クリア
+    sel.innerHTML = '';
+
+    // 先頭の既定表示（あれば）
+    if (defaultOpt) {
+      sel.appendChild(defaultOpt);
+    } else {
+      // id でメッセージを変える（任意）
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = sel.id === 'qGenre' ? 'ジャンル：すべて' :
+                        sel.id === 'rankGenre' ? 'すべて' : '選択してください';
+      sel.appendChild(opt);
+    }
+
+    // GENRES から投入
+    window.GENRES.forEach(g => {
+      const o = document.createElement('option');
+      o.value = g;
+      o.textContent = g;
+      sel.appendChild(o);
+    });
+
+    // 可能なら元の選択値を復元
+    if (current && [...sel.options].some(o => o.value === current)) {
+      sel.value = current;
+    }
+  });
+};
+
+// DOM 準備完了で自動投入
+document.addEventListener('DOMContentLoaded', () => {
+  try { window.populateGenreSelects(); } catch (e) { console.warn(e); }
 });
