@@ -5,17 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>管理者コンソール - だれでもレビュー</title>
 
-  <!-- GitHub Pages サブパス -->
   <base href="/multi-reviewsight/">
 
-  <!-- 共通ヘッド（コピペ用） -->
+  <!-- 共通ヘッド（そのままコピペでOK） -->
   <link rel="stylesheet" href="css/style.css?v=2025-10-03" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="js/common.js?v=2025-10-03"></script>
   <script defer src="js/admin.js?v=2025-10-03"></script>
 </head>
-<body class="bg-gray-50 text-gray-900">
+<body class="bg-white text-gray-900">
 <header class="border-b bg-white">
   <div class="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
     <a href="./" class="font-bold text-xl">だれでもレビュー</a>
@@ -31,20 +30,39 @@
     <h1 class="sec">管理者コンソール</h1>
     <p id="me" class="text-sm text-gray-600">状態を確認中…</p>
 
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-      <input id="q" class="inp md:col-span-2" placeholder="商品名・タイトルで検索" />
-      <select id="qGenre" class="inp">
-        <option value="">ジャンル：すべて</option>
-        <option>ゲーム</option><option>漫画</option><option>アニメ</option><option>書籍</option>
-        <option>映画</option><option>ドラマ</option><option>ソフトウェア</option>
-        <option>IT関連</option><option>DIY関連</option><option>音楽</option>
-        <option>ファッション</option><option>その他</option>
-      </select>
-      <button id="btnSearch" class="btn">検索</button>
+    <!-- タブ -->
+    <div class="flex gap-2 border-b pb-2">
+      <button data-tab="reviews" class="tab active">レビュー管理</button>
+      <button data-tab="comments" class="tab">コメント管理</button>
     </div>
 
-    <div class="text-sm text-gray-500">最新50件まで表示。削除は**取り消せません**。</div>
-    <div id="list" class="divide-y"></div>
+    <!-- レビュー管理 -->
+    <div id="tab-reviews" class="tabpanel">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
+        <input id="q" class="inp md:col-span-2" placeholder="商品名・タイトルで検索" />
+        <select id="qGenre" class="inp">
+          <option value="">ジャンル：すべて</option>
+          <option>ゲーム</option><option>漫画</option><option>アニメ</option><option>音楽</option>
+          <option>書籍</option><option>映画</option><option>ドラマ</option><option>ソフトウェア</option>
+          <option>IT関連</option><option>DIY関連</option><option>ファッション</option><option>その他</option>
+        </select>
+        <button id="btnSearch" class="btn">検索</button>
+      </div>
+      <div class="text-sm text-gray-500">最新50件まで表示。削除は<strong>取り消せません</strong>。</div>
+      <div id="list" class="divide-y"></div>
+    </div>
+
+    <!-- コメント管理 -->
+    <div id="tab-comments" class="tabpanel hidden">
+      <div class="grid grid-cols-1 md:grid-cols-5 gap-3 mb-3">
+        <input id="cText" class="inp md:col-span-2" placeholder="本文・表示名を検索（前方一致/部分一致）" />
+        <input id="cReviewId" class="inp" placeholder="レビューID（任意）" />
+        <input id="cEmail" class="inp" placeholder="ユーザーEmail（任意）" />
+        <button id="btnCSearch" class="btn">検索</button>
+      </div>
+      <div class="text-sm text-gray-500">最新100件まで表示。削除は<strong>取り消せません</strong>。</div>
+      <div id="clist" class="divide-y"></div>
+    </div>
   </section>
 </main>
 </body>
