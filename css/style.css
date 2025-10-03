@@ -351,12 +351,14 @@ document.addEventListener('click', (e) => {
 .toast{ opacity:0; transform: translateY(6px); transition:.25s ease; background:#0f172a; color:#fff; border-radius:12px; padding:10px 12px; font-size:14px; box-shadow: var(--shadow-2); }
 .toast.show{ opacity:1; transform: translateY(0); }
 
-/* review.html 限定・画像を正方形中央に固定（保険込み） */
-body[data-page="review"] .mediaBox,
-body[data-page="review"] .card img { display:grid; place-items:center; }
+/* review.html 限定：画像センター強制（保険） */
+body[data-page="review"] .mediaBox{ width:128px; height:128px; border-radius:14px;
+  background:#eef2f7; display:grid; place-items:center; overflow:hidden; }
+@media (min-width:640px){ body[data-page="review"] .mediaBox{ width:180px; height:180px; } }
 body[data-page="review"] .mediaBox img,
-body[data-page="review"] .card img {
+body[data-page="review"] #detailThumb{
   width:auto !important; height:auto !important;
   max-width:100% !important; max-height:100% !important;
-  object-fit:contain !important; object-position:center !important;
+  object-fit:contain !important; object-position:center !important; display:block;
 }
+
