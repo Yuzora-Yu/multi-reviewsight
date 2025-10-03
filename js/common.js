@@ -1,67 +1,97 @@
-// ----- サイト共通設定 -----
-window.GENRES = ['ゲーム','漫画','アニメ','音楽','書籍','映画','ドラマ','ソフトウェア','IT関連','DIY関連','ファッション','その他'];
-window.APP_BASE_ABS = 'https://yuzora-yu.github.io/multi-reviewsight/';
+// js/common.js —— フル置換版（GENRES あり）
 
-// ====== Supabase 接続 ======
+// ==== カテゴリ（全ページ共通で使えるように window に） ====
+window.GENRES = [
+  'ゲーム','漫画','アニメ','音楽','書籍','映画','ドラマ',
+  'ソフトウェア','IT関連','DIY関連','ファッション','その他'
+];
+
+// ==== Supabase 接続（固定） ====
 const SUPABASE_URL = 'https://ovkumzhdxjljukfqchvu.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im92a3VtemhkeGpsanVrZnFjaHZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk0NTMwMjcsImV4cCI6MjA3NTAyOTAyN30.MOzQtbiP9Ac1QA1Tsk9A3bvu5wHUvv3ggUd8l-jSvcw';
+const SUPABASE_ANON_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im92a3VtemhkeGpsanVrZnFjaHZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk0NTMwMjcsImV4cCI6MjA3NTAyOTAyN30.MOzQtbiP9Ac1QA1Tsk9A3bvu5wHUvv3ggUd8l-jSvcw';
 
+// SDK のファクトリ(window.supabase)からクライアントを作り、window.sb に固定
 window.sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// ====== ヘルパー ======
-window.appUrl = (pathAndQuery) => new URL(pathAndQuery, window.APP_BASE_ABS).toString();
+// ==== サイト共通 ====
+window.APP_BASE_ABS = 'https://yuzora-yu.github.io/multi-reviewsight/';
 
+// クエリ取得
+window.qs = (key, def = null) => new URLSearchParams(location.search).get(key) ?? def;
+
+// SHA-256(hex)
 window.sha256hex = async (text) => {
   const enc = new TextEncoder().encode(text);
   const buf = await crypto.subtle.digest('SHA-256', enc);
-  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
 };
 
-window.openTweetIntent = (url, text='レビューを投稿しました！', hashtags=['レビュー']) => {
+// X共有Intent
+window.openTweetIntent = (url, text = 'レビューを投稿しました！', hashtags = ['レビュー']) => {
   const u = new URL('https://twitter.com/intent/tweet');
   u.searchParams.set('url', url);
   if (text) u.searchParams.set('text', text);
   if (hashtags?.length) u.searchParams.set('hashtags', hashtags.join(','));
-  window.open(u.toString(), '_blank', 'noopener,noreferrer');
+  window.open(u.toString(), '_blank');
 };
 
-// ====== 一覧カード（必ず定義！） ======
+// トースト
+window.toast = (msg) => {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2600);
+};
+
+// プロフィール名（profiles.display_name があれば優先）
+window.getDisplayName = async () => {
+  const { data: { user } } = await window.sb.auth.getUser();
+  if (!user) return null;
+  const { data } = await window.sb.from('profiles')
+    .select('display_name').eq('user_id', user.id).maybeSingle();
+  return data?.display_name || (user.email ? user.email.split('@')[0] : '匿名');
+};
+
+// 一覧カード（トップ/マイページ用）
 window.reviewCard = (r) => {
-  // r は reviews の行。created_at, score, title, product_name などを想定
   const img = r.product_image_url || 'https://placehold.co/128x128?text=No+Image';
-  const url = `review.html?id=${r.id}`; // <base> が効くため相対でOK
-  const date = r.created_at ? new Date(r.created_at).toLocaleDateString() : '';
-  const name = r.author_name || '匿名';
-
+  const url = `review.html?id=${r.id}`;
   return `
-    <a class="card" href="${url}">
-      <img src="${img}" alt="">
-      <div class="flex-1">
-        <div class="meta">${r.genre || ''} ${date ? ' | ' + date : ''}</div>
-        <div class="title">${r.title || '(タイトルなし)'}</div>
-        <div class="meta">${r.product_name || ''} / ${name}</div>
-      </div>
-      <div class="text-2xl font-bold">${Number.isFinite(+r.score) ? r.score : '-'}</div>
-    </a>
-  `;
+  <a class="card" href="${url}">
+    <img src="${img}" alt="">
+    <div class="flex-1">
+      <div class="meta">${r.genre}｜${new Date(r.created_at).toLocaleDateString()}</div>
+      <div class="title">${r.title}</div>
+      <div class="meta">${r.product_name} / ${r.author_name || '匿名'}</div>
+    </div>
+    <div class="text-2xl font-bold">${r.score}</div>
+  </a>`;
 };
 
-// ====== ヘッダーのログインリンク切替（任意） ======
+// ヘッダーのログイン/ログアウト切替
 document.addEventListener('DOMContentLoaded', async () => {
   try {
-    const user = (await window.sb.auth.getUser()).data.user;
+    const sb = window.sb;
+    const { data: { user } } = await sb.auth.getUser();
     const loginLink = document.getElementById('loginLink');
-    if (!loginLink) return;
-    if (user) {
-      loginLink.textContent = 'ログアウト';
-      loginLink.addEventListener('click', async (e) => {
-        e.preventDefault();
-        await window.sb.auth.signOut();
-        location.reload();
-      }, { once:true });
-    } else {
-      loginLink.textContent = 'ログイン / 登録';
-      loginLink.href = 'auth.html';
+    if (loginLink) {
+      if (user) {
+        loginLink.textContent = 'ログアウト';
+        loginLink.addEventListener('click', async (e) => {
+          e.preventDefault();
+          await sb.auth.signOut();
+          location.reload();
+        });
+      } else {
+        loginLink.textContent = 'ログイン / 登録';
+        loginLink.setAttribute('href', 'auth.html');
+      }
     }
-  } catch {}
+    console.log('Supabase reachable.');
+  } catch (e) {
+    alert('ネットワークまたは設定エラーでDBに到達できませんでした');
+    console.error(e);
+  }
 });
