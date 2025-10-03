@@ -1,76 +1,258 @@
-/* css/style.css — Cool Blue/Purple（X×Instagramの中間） */
+/* =========================================================
+   DAREDEMO REVIEW — Deep Navy x Black w/ Yellow Accent
+   - 濃いブルー/ブラック基調 + 黄色の差し色
+   - 既存HTMLのクラスをそのまま使える
+   - Light/Dark 両対応、アクセシビリティ考慮
+   ========================================================= */
+
+/* ---------- Theme Tokens ---------- */
 :root{
-  --bg: #0b0e14;
-  --panel: #0f131c;
-  --panel-2:#141a25;
-  --text:#e8ecf5;
-  --muted:#9aa4b6;
-  --border: rgba(255,255,255,.08);
-  --accent:#7ab8ff;     /* 青 */
-  --accent-2:#ae8bff;   /* 紫 */
-  --ring: rgba(122,184,255,.36);
-  --shadow: 0 14px 40px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.04);
+  /* core palette */
+  --navy-900:#071023;    /* 背景（濃紺） */
+  --navy-800:#0B1731;    /* パネル深 */
+  --navy-700:#0F1F40;    /* パネル浅 */
+  --ink-900:#0A0D12;     /* ほぼ黒 */
+  --ink-800:#10141C;
+
+  --blue-500:#2C6BFF;    /* 主ボタン/リンク */
+  --blue-400:#4B86FF;
+  --blue-300:#7AA6FF;
+
+  --yellow-400:#FFD34D;  /* 差し色（強） */
+  --yellow-500:#FFC72B;
+
+  --text-strong:#F2F6FF; /* 主要文字 */
+  --text:#D7DEF0;        /* 通常文字 */
+  --muted:#97A3BD;       /* 補助文字 */
+
+  --border:rgba(255,255,255,.10);
+  --border-2:rgba(255,255,255,.06);
+
+  --ring:rgba(44,107,255,.40);
+  --ring-weak:rgba(255,211,77,.35);
+
+  --shadow:0 18px 44px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.03);
+
+  --radius-lg:18px;
+  --radius-md:14px;
+  --radius-sm:10px;
+
+  --container:1024px;
+  --gap:18px;
+
+  --font: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans JP",
+          Helvetica, Arial, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
 }
-@media (prefers-color-scheme: light){
+
+/* Light モード用（自動） */
+@media (prefers-color-scheme:light){
   :root{
-    --bg:#f6f7fb; --panel:#ffffff; --panel-2:#fbfbfe; --text:#111522;
-    --muted:#5b6271; --border:rgba(17,21,34,.08); --ring:rgba(122,184,255,.42);
-    --shadow:0 10px 26px rgba(20,24,40,.08);
+    --navy-900:#F5F7FB;
+    --navy-800:#FFFFFF;
+    --navy-700:#FBFCFF;
+    --ink-900:#0B0F16;
+    --ink-800:#121826;
+
+    --text-strong:#0E1423;
+    --text:#1B2336;
+    --muted:#5B647A;
+
+    --border:rgba(12,20,36,.14);
+    --border-2:rgba(12,20,36,.08);
+
+    --shadow:0 14px 36px rgba(16,24,40,.10);
   }
 }
-*{box-sizing:border-box} html,body{height:100%}
+
+/* ---------- Base ---------- */
+*{box-sizing:border-box}
+html,body{height:100%}
+html{scroll-behavior:smooth}
 body{
-  margin:0; color:var(--text);
-  font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP",Helvetica,Arial;
+  margin:0;
+  color:var(--text);
+  font-family:var(--font);
   background:
-    radial-gradient(1000px 700px at 110% -10%, rgba(122,184,255,.10), transparent 60%),
-    radial-gradient(800px 600px at -10% 120%, rgba(174,139,255,.12), transparent 60%),
-    var(--bg);
+    radial-gradient(900px 600px at 110% -10%, rgba(44,107,255,.10), transparent 60%),
+    radial-gradient(800px 560px at -12% 120%, rgba(255,199,43,.10), transparent 60%),
+    linear-gradient(180deg, var(--navy-900), var(--navy-800));
 }
 
-/* header */
-header{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--panel) 78%,transparent);
-  backdrop-filter:saturate(140%) blur(10px); border-bottom:1px solid var(--border)}
-.brand{font-weight:900;letter-spacing:.2px;background:linear-gradient(90deg,var(--accent),var(--accent-2));
-  -webkit-background-clip:text;background-clip:text;color:transparent}
+/* アクセシビリティ */
+:focus-visible{outline:0; box-shadow:0 0 0 6px var(--ring);}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms !important; animation-iteration-count:1 !important;
+    transition-duration:.01ms !important; scroll-behavior:auto !important;}
+}
 
-/* container */
-.mx{max-width:1024px;margin:0 auto;padding:14px 18px}
-
-/* buttons */
-.btn,.btn-outline{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
-  padding:.65rem 1rem;border-radius:14px;font-weight:800;text-decoration:none;cursor:pointer;
-  border:1px solid transparent;transition:.2s}
-.btn{color:#0c1220;background:linear-gradient(180deg,#d8e8ff,#aaceff);box-shadow:var(--shadow)}
-.btn:hover{transform:translateY(-1px) scale(1.01)}
-.btn-outline{color:var(--text);background:color-mix(in srgb,var(--panel) 82%,transparent);border-color:var(--border)}
-.btn-outline:hover{border-color:color-mix(in srgb,var(--accent) 60%,var(--border))}
-.btn-xs{padding:.45rem .7rem;border-radius:12px;font-size:.86rem}
-
-/* inputs */
-.inp, textarea.inp, select.inp{
-  width:100%;padding:.75rem .95rem;border-radius:12px;border:1px solid var(--border);
-  background:var(--panel-2);color:var(--text);box-shadow:inset 0 1px 0 rgba(255,255,255,.03);
-  outline:none;transition:.15s}
-.inp:focus{border-color:color-mix(in srgb,var(--accent) 40%,var(--border));box-shadow:0 0 0 6px var(--ring)}
-.label{font-size:.9rem;color:var(--muted);margin-bottom:.35rem;display:block}
-
-/* blocks */
-.block{background:color-mix(in srgb,var(--panel) 86%,transparent);border:1px solid var(--border);
-  border-radius:18px;padding:18px;box-shadow:var(--shadow)}
-.sec{font-weight:900;font-size:1.06rem}
-
-/* cards */
-.card{display:flex;gap:12px;align-items:center;padding:12px;border:1px solid var(--border);
-  border-radius:16px;background:linear-gradient(180deg,color-mix(in srgb,var(--panel-2) 92%,transparent),var(--panel));
-  box-shadow:var(--shadow)}
-.card img{width:76px;height:76px;object-fit:cover;border-radius:12px;border:1px solid var(--border);background:#111}
-.meta{font-size:.8rem;color:var(--muted)}
-.title{font-weight:900}
-
-/* modal */
-.modal{width:min(640px,94vw);background:var(--panel);border:1px solid var(--border);
-  border-radius:18px;padding:18px;box-shadow:var(--shadow)}
-
+/* ---------- Layout ---------- */
+.mx{max-width:var(--container); margin:0 auto; padding:14px 18px;}
 .hidden{display:none}
 .bg{background:transparent}
+
+/* Header */
+header{
+  position:sticky; top:0; z-index:20;
+  background:color-mix(in srgb, var(--navy-800) 85%, transparent);
+  backdrop-filter:saturate(140%) blur(10px);
+  border-bottom:1px solid var(--border);
+}
+.brand{
+  font-weight:900; letter-spacing:.2px;
+  background:linear-gradient(90deg, var(--blue-300), var(--yellow-400));
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+
+/* ---------- Typography ---------- */
+h1,h2,h3,h4{color:var(--text-strong); margin:0}
+.sec{font-weight:900; font-size:1.06rem;}
+.meta{font-size:.82rem; color:var(--muted)}
+.title{font-weight:900}
+
+/* ---------- Blocks / Cards ---------- */
+.block{
+  background:linear-gradient(180deg, color-mix(in srgb, var(--navy-700) 92%, transparent), var(--navy-800));
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  padding:18px;
+  box-shadow:var(--shadow);
+}
+.card{
+  display:flex; align-items:center; gap:12px;
+  background:linear-gradient(180deg, color-mix(in srgb, var(--navy-700) 96%, transparent), var(--navy-800));
+  border:1px solid var(--border-2);
+  border-radius:var(--radius-md);
+  padding:12px;
+  box-shadow:var(--shadow);
+}
+.card img{
+  width:76px; height:76px; object-fit:cover;
+  border-radius:12px; border:1px solid var(--border); background:#0b0f18;
+}
+
+/* ---------- Buttons ---------- */
+.btn,.btn-outline,.btn-ghost{
+  display:inline-flex; align-items:center; justify-content:center; gap:.55rem;
+  padding:.7rem 1rem; border-radius:14px; font-weight:800; text-decoration:none;
+  border:1px solid transparent; cursor:pointer; transition:.18s;
+  user-select:none; -webkit-tap-highlight-color:transparent;
+}
+
+.btn{
+  color:#0b0f18;
+  background:
+    linear-gradient(180deg, #cfe0ff, #9fc0ff 70%),
+    linear-gradient(90deg, var(--blue-500), var(--blue-300));
+  border-color:color-mix(in srgb, var(--blue-500) 30%, transparent);
+  box-shadow:var(--shadow);
+}
+.btn:hover{transform:translateY(-1px) scale(1.01)}
+.btn:active{transform:translateY(0)}
+
+.btn-outline{
+  color:var(--text-strong);
+  background:color-mix(in srgb, var(--navy-700) 82%, transparent);
+  border-color:var(--border);
+}
+.btn-outline:hover{border-color:color-mix(in srgb, var(--blue-500) 60%, var(--border))}
+
+.btn-ghost{
+  color:var(--text-strong);
+  background:transparent;
+  border-color:transparent;
+}
+.btn-xs{padding:.46rem .72rem; border-radius:12px; font-size:.88rem}
+
+/* 重要導線（黄色アクセント） */
+.btn-accent{
+  color:#111;
+  background:linear-gradient(180deg, #ffe694, var(--yellow-400));
+  border:1px solid color-mix(in srgb, var(--yellow-500) 50%, transparent);
+  box-shadow:0 14px 30px rgba(255, 199, 43, .18);
+}
+.btn-accent:hover{filter:saturate(110%)}
+
+/* 危険操作 */
+.btn-danger{
+  color:#fff; background:linear-gradient(180deg,#FF5A7A,#E63B5C);
+  border:1px solid rgba(230,59,92,.5);
+}
+
+/* ---------- Forms ---------- */
+.inp, textarea.inp, select.inp{
+  width:100%; padding:.78rem .96rem; border-radius:12px;
+  background:color-mix(in srgb, var(--navy-700) 84%, transparent);
+  color:var(--text); border:1px solid var(--border);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+  outline:0; transition:.15s;
+}
+.inp::placeholder{color:color-mix(in srgb, var(--muted) 80%, transparent)}
+.inp:focus{border-color:color-mix(in srgb, var(--blue-500) 60%, var(--border)); box-shadow:0 0 0 6px var(--ring);}
+select.inp{appearance:none; background-image:linear-gradient(45deg,transparent 50%, var(--muted) 50%),
+            linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position:calc(100% - 18px) calc(50% - 3px), calc(100% - 12px) calc(50% - 3px);
+  background-size:6px 6px, 6px 6px; background-repeat:no-repeat;}
+.label{font-size:.9rem; color:var(--muted); margin-bottom:.35rem; display:block}
+
+/* ---------- Modal ---------- */
+.modal{
+  width:min(640px,94vw);
+  background:linear-gradient(180deg, color-mix(in srgb, var(--navy-700) 92%, transparent), var(--navy-800));
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  padding:18px; box-shadow:var(--shadow);
+}
+
+/* ---------- Utilities ---------- */
+.badge{
+  display:inline-flex; align-items:center; gap:.35rem;
+  font-size:.78rem; color:#111; background:var(--yellow-400);
+  border-radius:999px; padding:.18rem .6rem; font-weight:800;
+}
+.pill{
+  display:inline-flex; align-items:center; gap:.35rem;
+  font-size:.78rem; color:var(--text);
+  background:color-mix(in srgb, var(--navy-700) 76%, transparent);
+  border:1px solid var(--border-2); border-radius:999px; padding:.18rem .6rem;
+}
+.kbd{
+  font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size:.78rem; color:var(--text-strong); background:var(--ink-800);
+  border:1px solid var(--border); padding:.2rem .45rem; border-radius:8px;
+}
+
+/* ---------- Tables / Lists (ランキング等) ---------- */
+.table{
+  width:100%; border-collapse:separate; border-spacing:0 10px;
+}
+.table thead th{
+  text-align:left; font-size:.84rem; color:var(--muted); font-weight:700; padding:6px 10px;
+}
+.table tbody tr{
+  background:linear-gradient(180deg, color-mix(in srgb, var(--navy-700) 95%, transparent), var(--navy-800));
+  border:1px solid var(--border-2); border-radius:12px;
+}
+.table tbody td{
+  padding:10px; border-top:1px solid var(--border-2);
+}
+.rank-num{
+  width:42px; text-align:right; font-weight:900; color:var(--yellow-400); font-variant-numeric:tabular-nums;
+}
+
+/* ---------- Footer ---------- */
+footer{
+  margin-top:36px; color:var(--muted); text-align:center; font-size:.82rem;
+}
+
+/* ---------- Image helpers ---------- */
+img.round{border-radius:12px; border:1px solid var(--border); background:#0b0f18}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 720px){
+  .mx{padding:12px}
+  .card img{width:64px; height:64px}
+  .btn,.btn-outline{padding:.62rem .9rem}
+}
+
+/* ---------- Accent ring for yellow actions ---------- */
+.ring-accent:focus-visible{box-shadow:0 0 0 6px var(--ring-weak)}
